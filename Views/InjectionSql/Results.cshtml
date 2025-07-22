@@ -1,0 +1,31 @@
+﻿@model List<Product>
+
+@{
+    ViewData["Title"] = "Résultats Recherche";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (Model == null || !Model.Any())
+{
+    <p>Aucun produit trouvé.</p>
+}
+else
+{
+    <table border="1">
+        <thead>
+            <tr><th>ID</th><th>name</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.Id</td>
+                    <td>@user.Name</td>
+                    <td>@user.Description</td> <!-- exposé volontairement -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+<a href="@Url.Action("Index")">Nouvelle recherche</a>

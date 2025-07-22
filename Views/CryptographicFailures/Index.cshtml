@@ -1,0 +1,400 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<SecretExposure>
+
+@{
+    ViewData["Title"] = "Cryptographic Failures";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module expose de vrais secrets et utilise de la cryptographie vulnérable.
+        Les défaillances cryptographiques sont la vulnérabilité #2 du OWASP Top 10 2021. Ne jamais déployer en production !
+    </div>
+
+    <h2>A02:2021 - Cryptographic Failures</h2>
+    <p class="text-muted">Mauvaise gestion des secrets, chiffrement faible et stockage non sécurisé</p>
+
+    <!-- Information sur les secrets exposés -->
+    <div class="alert alert-warning">
+        <i class="fas fa-key"></i> <strong>Secrets simulés disponibles :</strong>
+        <ul class="mb-0 mt-2">
+            <li>Clés API (Stripe, AWS, GitHub, etc.)</li>
+            <li>Mots de passe et tokens hardcodés</li>
+            <li>Certificats et clés privées</li>
+            <li>Chaînes de connexion avec credentials</li>
+        </ul>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="CryptographicFailures" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de vulnérabilité</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            var payloadExample = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.PayloadExample ?? "");
+                            var riskLevel = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.RiskLevel ?? "");
+                            
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@payloadExample"
+                                    data-risk-level="@riskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;" id="payloadExampleContent"></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Paramètres (optionnel)</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="password=test123" />
+                    <small class="form-text text-muted">
+                        Certains endpoints acceptent des paramètres
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-unlock"></i> Tester la vulnérabilité
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    <i class="fas fa-key fa-2x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-terminal"></i> Instructions de test</h5>
+                <p>Testez ces endpoints vulnérables directement :</p>
+
+                @if (Model.AttackType == "hardcoded-secrets")
+                {
+                    <strong>Secrets hardcodés dans le code :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/ExposedSecrets</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/ExposedSecrets" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-key"></i> Voir tous les secrets hardcodés
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "weak-hashing")
+                {
+                    <strong>Hachage avec algorithmes faibles :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/WeakHashing?password=test123</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/WeakHashing?password=test123" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-hashtag"></i> Tester MD5/SHA1
+                        </a>
+                        <a href="/CryptographicFailures/WeakHashing?password=admin123" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-hashtag"></i> Hash admin123
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "plaintext-storage")
+                {
+                    <strong>Stockage en clair des données sensibles :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/GetUserSecrets?username=alice</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/GetUserSecrets" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-users"></i> Voir tous les utilisateurs
+                        </a>
+                        <a href="/CryptographicFailures/GetUserSecrets?username=alice" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-user"></i> Secrets d'Alice
+                        </a>
+                        <a href="/CryptographicFailures/GetUserSecrets?username=admin" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-user-shield"></i> Secrets Admin
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "weak-encryption")
+                {
+                    <strong>Chiffrement avec algorithmes obsolètes :</strong>
+                    <br />
+                    <code>POST /CryptographicFailures/WeakEncryption</code>
+                    <br />
+                    <pre class="mt-2">{
+  "data": "Sensitive information"
+}</pre>
+                    <small class="text-muted">Utilisez Postman ou l'inspecteur réseau pour envoyer ce JSON</small>
+                }
+                else if (Model.AttackType == "exposed-keys")
+                {
+                    <strong>Clés privées et certificats exposés :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/GetPrivateKeys</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/GetPrivateKeys" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-certificate"></i> Voir clés privées
+                        </a>
+                        <a href="/CryptographicFailures/GetConfig" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-cog"></i> Configuration complète
+                        </a>
+                        <a href="/CryptographicFailures/GetLogs" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-alt"></i> Logs avec secrets
+                        </a>
+                    </div>
+                    <br />
+                    <strong>Fichiers de configuration exposés :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/GetConfigFiles?filename=[nom]</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/GetConfigFiles" target="_blank" class="btn btn-warning btn-sm">
+                            <i class="fas fa-folder-open"></i> Lister les fichiers
+                        </a>
+                        <a href="/CryptographicFailures/GetConfigFiles?filename=appsettings.json" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-code"></i> appsettings.json
+                        </a>
+                        <a href="/CryptographicFailures/GetConfigFiles?filename=web.config" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-code"></i> web.config
+                        </a>
+                        <a href="/CryptographicFailures/GetConfigFiles?filename=.env" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file"></i> .env
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "insecure-random")
+                {
+                    <strong>Génération de nombres aléatoires non sécurisée :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/InsecureRandom</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/InsecureRandom" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-dice"></i> Générer tokens faibles
+                        </a>
+                        <a href="/CryptographicFailures/ReversiblePasswordStorage" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-unlock-alt"></i> Encodage réversible
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "weak-tls")
+                {
+                    <strong>Configuration TLS/SSL vulnérable :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/WeakTLSConfig</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/WeakTLSConfig" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-shield-alt"></i> Voir config TLS faible
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "missing-encryption")
+                {
+                    <strong>Transmission de données sans chiffrement :</strong>
+                    <br />
+                    <code>GET /CryptographicFailures/UnencryptedTransmission</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CryptographicFailures/UnencryptedTransmission" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-wifi"></i> Données non chiffrées
+                        </a>
+                    </div>
+                }
+
+                <div class="mt-3">
+                    <a href="/CryptographicFailures/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Voir tous les endpoints vulnérables
+                    </a>
+                </div>
+            </div>
+
+            <!-- Patterns détectables par SAST -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Hardcoded Secrets :</strong> API_KEY, PASSWORD, SECRET dans le code</li>
+                    <li><strong>Weak Cryptography :</strong> MD5, SHA1, DES, ECB mode</li>
+                    <li><strong>Plaintext Storage :</strong> Mots de passe non hachés</li>
+                    <li><strong>Private Key Exposure :</strong> BEGIN RSA PRIVATE KEY</li>
+                    <li><strong>Sensitive Data in Logs :</strong> Logging de mots de passe</li>
+                    <li><strong>Weak Keys :</strong> Clés de chiffrement faibles ou hardcodées</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Secrets courants détectables -->
+    <div class="mt-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-exclamation-triangle"></i> Patterns de secrets détectables</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Clés API :</h6>
+                        <ul class="small">
+                            <li>sk_live_* (Stripe)</li>
+                            <li>AKIA* (AWS)</li>
+                            <li>ghp_* (GitHub)</li>
+                            <li>rzp_* (Razorpay)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Tokens et Secrets :</h6>
+                        <ul class="small">
+                            <li>Bearer tokens</li>
+                            <li>JWT secrets</li>
+                            <li>OAuth secrets</li>
+                            <li>API tokens</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Credentials :</h6>
+                        <ul class="small">
+                            <li>Database passwords</li>
+                            <li>SSH keys</li>
+                            <li>Certificats SSL</li>
+                            <li>Connection strings</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fichiers de configuration vulnérables -->
+    <div class="mt-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-file-code"></i> Fichiers de configuration avec secrets</h6>
+            </div>
+            <div class="card-body">
+                <p>Les fichiers de configuration suivants contiennent des secrets hardcodés détectables par SAST :</p>
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-file"></i> appsettings.json</h6>
+                        <ul class="small">
+                            <li>Connection strings avec mots de passe</li>
+                            <li>Clés API (Stripe, AWS, etc.)</li>
+                            <li>JWT secrets</li>
+                            <li>OAuth client secrets</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-file-code"></i> web.config</h6>
+                        <ul class="small">
+                            <li>Credentials en clair</li>
+                            <li>Machine keys hardcodées</li>
+                            <li>SMTP passwords</li>
+                            <li>Service credentials</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-file-alt"></i> .env</h6>
+                        <ul class="small">
+                            <li>Variables d'environnement</li>
+                            <li>Database URLs complètes</li>
+                            <li>Tous les secrets de l'app</li>
+                            <li>Clés privées RSA/SSL</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>CRITIQUE :</strong> 
+                    Ces fichiers ne doivent JAMAIS contenir de secrets en dur et le fichier .env ne doit JAMAIS être commité !
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Gestionnaire de secrets :</strong> Azure Key Vault, AWS Secrets Manager, HashiCorp Vault</li>
+                    <li><strong>Variables d'environnement :</strong> Pour les secrets de configuration</li>
+                    <li><strong>Hachage sécurisé :</strong> bcrypt, scrypt, Argon2</li>
+                    <li><strong>Chiffrement moderne :</strong> AES-256-GCM, ChaCha20-Poly1305</li>
+                    <li><strong>Rotation des secrets :</strong> Changement régulier des clés</li>
+                    <li><strong>Principe du moindre privilège :</strong> Limiter l'accès aux secrets</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/cryptographic-failures.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos))
+    </script>
+
+    <script>
+        window.cryptographicFailuresData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/cryptographic-failures.js"></script>
+}

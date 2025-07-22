@@ -1,0 +1,310 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<CommandResult>
+
+@{
+    ViewData["Title"] = "Command Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application exécute des commandes système réelles !
+        Utilisez uniquement dans un environnement de test isolé. Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>Command Injection - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection de commandes système (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionCommand" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Exemple de payload :</strong><br />
+                            <code id="payloadExampleContent"></code>
+                        </div>
+                        <button type="button" id="useExampleBtn" class="btn btn-sm btn-outline-primary" style="display:none;">
+                            Utiliser
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload à tester</label>
+                    <input type="text" id="payload" name="payload" class="form-control" value="@Model.Payload" placeholder="Entrez votre payload de commande..." />
+                    <small class="form-text text-muted">
+                        Simule une fonction qui traite un nom de fichier (ex: cat, type, ping)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-terminal"></i> Exécuter la commande
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - Command Injection</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Commande exécutée -->
+    @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+    {
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Commande exécutée :</h5>
+                <!-- Bouton de copie sécurisé -->
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyCommandToClipboard()">
+                    <i class="fas fa-copy"></i> Copier
+                </button>
+            </div>
+            <pre class="bg-dark text-light p-3 border rounded"><code>@Model.ExecutedSql</code></pre>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'exécution</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+            {
+                <p><strong>Commande tentée :</strong></p>
+                <div class="bg-light p-2 border rounded">
+                    <code>@Model.ExecutedSql</code>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@Html.Raw(attackInfo.ErrorExplanation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-terminal"></i> Résultats d'exécution (@Model.Results.Count)</h5>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportResults()">
+                    <i class="fas fa-download"></i> Exporter CSV
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover mt-3">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Commande</th>
+                            <th>Sortie</th>
+                            <th>Temps (ms)</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var result in Model.Results)
+                        {
+                            <tr class="@(result.Success ? "table-success" : "table-warning")">
+                                <td><code class="small">@result.Command</code></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(result.Output))
+                                    {
+                                        <pre class="small mb-0" style="max-height: 150px; overflow-y: auto; white-space: pre-wrap;">@result.Output</pre>
+                                    }
+                                    else
+                                    {
+                                        <em class="text-muted">Aucune sortie</em>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="@(result.ExecutionTime > 1000 ? "text-warning" : "text-success")">
+                                        @result.ExecutionTime.ToString("F2")
+                                    </span>
+                                    @if (result.ExecutionTime > 1000)
+                                    {
+                                        <i class="fas fa-clock text-warning" title="Délai suspect - possible injection temporelle"></i>
+                                    }
+                                </td>
+                                <td>
+                                    @if (result.Success)
+                                    {
+                                        <span class="badge bg-success">Succès</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Échec</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Analyse des résultats -->
+            @{
+                var hasOutput = Model.Results.Any(r => !string.IsNullOrEmpty(r.Output));
+                var hasSlowExecution = Model.Results.Any(r => r.ExecutionTime > 1000);
+            }
+
+            @if (hasOutput || hasSlowExecution)
+            {
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="fas fa-search"></i> Analyse des résultats :</h6>
+                    <ul class="mb-0">
+                        @if (hasOutput)
+                        {
+                            <li><strong>Sortie détectée :</strong> L'injection semble avoir produit un résultat, indiquant une vulnérabilité potentielle.</li>
+                        }
+                        @if (hasSlowExecution)
+                        {
+                            <li><strong>Exécution lente :</strong> Temps d'exécution > 1s détecté, possible injection temporelle réussie.</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.AttackType) && string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle"></i> Aucun résultat retourné par la commande.
+            Cela ne signifie pas nécessairement que l'injection a échoué (injection aveugle possible).
+        </div>
+    }
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Validation stricte :</strong> Validez et sanitisez tous les inputs utilisateur</li>
+                    <li><strong>Listes blanches :</strong> Utilisez des listes de caractères/commandes autorisés</li>
+                    <li><strong>Échappement :</strong> Échappez les caractères spéciaux du shell</li>
+                    <li><strong>Alternatives sécurisées :</strong> Utilisez des APIs au lieu d'appels système directs</li>
+                    <li><strong>Principe du moindre privilège :</strong> Exécutez avec des permissions minimales</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .table .small {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+            margin: 0;
+        }
+
+        .alert .bg-light {
+            background-color: rgba(255,255,255,0.1) !important;
+            border: none;
+            margin: 0;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Json.Serialize(Model.AttackInfos)
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.commandInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<CommandResult>())
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/command-injection.js"></script>
+}

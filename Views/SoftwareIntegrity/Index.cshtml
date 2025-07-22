@@ -1,0 +1,497 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<IntegrityFailureResult>
+
+@{
+    ViewData["Title"] = "Software and Data Integrity Failures";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies vulnérabilités d'intégrité détectables par les outils SAST.
+        Désérialisation non sécurisée, mises à jour sans signature, et plus !
+    </div>
+
+    <h2>A08:2021 - Software and Data Integrity Failures</h2>
+    <p class="text-muted">Vulnérabilités liées à l'intégrité du code et des données, désérialisation non sécurisée, et CI/CD</p>
+
+    <!-- État de la sécurité -->
+    <div class="alert alert-warning">
+        <i class="fas fa-shield-virus"></i> <strong>État de l'intégrité :</strong>
+        Désérialisation : <strong>NON SÉCURISÉE</strong> | Signatures : <strong>ABSENTES</strong> |
+        Hash : <strong>MD5/SHA1</strong> | Updates : <strong>HTTP</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="SoftwareIntegrity" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque Intégrité</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload / Configuration</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="Serialized data ou URL">
+                    <small class="form-text text-muted">
+                        Le payload sera adapté selon le type d'attaque
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-shield-virus"></i> Analyser la vulnérabilité
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces vulnérabilités d'intégrité directement :</p>
+
+                @if (Model.AttackType == "insecure-deserialization")
+                {
+                    <strong>Désérialisation non sécurisée (BinaryFormatter) :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="deserializeForm">
+                            <div class="mb-3">
+                                <label class="form-label">Données sérialisées (Base64) :</label>
+                                <textarea class="form-control font-monospace" id="serializedData" rows="3" 
+                                    placeholder="Base64 encoded BinaryFormatter data">AAEAAAD/////AQAAAAAAAAAMAgAAAElTeXN0ZW0sIFZlcnNpb249NC4wLjAuMCwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj1iNzdhNWM1NjE5MzRlMDg5BQEAAAALAAAAC3Rlc3Qgb2JqZWN0</textarea>
+                                <small class="text-danger">BinaryFormatter permet l'exécution de code!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-bomb"></i> Désérialiser (DANGEREUX)
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="generateGadgetChain()">
+                                <i class="fas fa-cog"></i> Générer gadget chain
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "unsigned-updates")
+                {
+                    <strong>Téléchargement de mise à jour non signée :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="updateForm">
+                            <div class="mb-3">
+                                <label class="form-label">URL de mise à jour :</label>
+                                <input type="text" class="form-control" id="updateUrl" 
+                                       value="http://update.malicious.com/latest.exe" 
+                                       placeholder="http://update-server/app.exe">
+                                <small class="text-danger">HTTP permet les attaques MITM!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-download"></i> Télécharger sans vérification
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "untrusted-sources")
+                {
+                    <strong>Chargement depuis CDN non vérifié :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="cdnForm">
+                            <div class="mb-3">
+                                <label class="form-label">URL CDN :</label>
+                                <input type="text" class="form-control" id="cdnUrl" 
+                                       value="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" 
+                                       placeholder="https://cdn.com/library.js">
+                                <small class="text-muted">Sans Subresource Integrity (SRI)</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-globe"></i> Charger sans SRI
+                            </button>
+                            <button type="button" class="btn btn-info btn-sm" onclick="showSRIExample()">
+                                <i class="fas fa-shield-alt"></i> Exemple sécurisé
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "weak-integrity")
+                {
+                    <strong>Vérification d'intégrité faible :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="integrityForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="integrityFile" 
+                                           value="update.exe" placeholder="Nom du fichier">
+                                </div>
+                                <div class="col-md-4">
+                                    <select class="form-control" id="hashAlgorithm">
+                                        <option value="MD5">MD5 (cassé)</option>
+                                        <option value="SHA1">SHA1 (faible)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-check-circle"></i> Vérifier
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <input type="text" class="form-control" id="expectedHash" 
+                                       placeholder="Hash attendu (MD5/SHA1)">
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "insecure-ci-cd")
+                {
+                    <strong>Pipeline CI/CD non sécurisé :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="pipelineForm">
+                            <div class="mb-3">
+                                <label class="form-label">Configuration pipeline (YAML) :</label>
+                                <textarea class="form-control font-monospace" id="pipelineConfig" rows="6">stages:
+  - build
+  - test
+  - deploy
+
+build:
+  script:
+    - run: whoami
+    - run: $USER_INPUT
+    - !!python/object/apply:os.system ['calc.exe']</textarea>
+                                <small class="text-danger">YAML permet l'injection de code!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-play-circle"></i> Exécuter pipeline
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "plugin-upload")
+                {
+                    <strong>Upload de plugin non vérifié :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="pluginForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label class="form-label">Fichier plugin (DLL/JAR) :</label>
+                                <input type="file" class="form-control" id="pluginFile" accept=".dll,.jar,.so">
+                                <small class="text-danger">Les plugins peuvent contenir du code malveillant!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-plug"></i> Charger plugin
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="createMaliciousPlugin()">
+                                <i class="fas fa-virus"></i> Générer plugin malveillant
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "yaml-injection")
+                {
+                    <strong>Injection YAML :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Payloads YAML dangereux :</p>
+                        <ul>
+                            <li><code>!!python/object/apply:os.system ['calc.exe']</code></li>
+                            <li><code>!ruby/object:Gem::Requirement</code></li>
+                            <li><code>!!javax.script.ScriptEngineManager</code></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="testYAMLInjection()">
+                        <i class="fas fa-syringe"></i> Tester injections YAML
+                    </button>
+                }
+                else if (Model.AttackType == "cache-poisoning")
+                {
+                    <strong>Cache Poisoning :</strong>
+                    <br />
+                    <div class="integrity-form mt-3 p-3 border rounded">
+                        <form id="cacheForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="cacheKey" 
+                                           value="user:admin" placeholder="Clé du cache">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="cacheValue" 
+                                           value='{"role":"superadmin","bypass":true}' 
+                                           placeholder="Valeur malveillante">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-flask"></i> Empoisonner le cache
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+
+                <div class="mt-3">
+                    <a href="/SoftwareIntegrity/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Tous les endpoints
+                    </a>
+                    <button class="btn btn-warning btn-sm" onclick="checkAutoUpdate()">
+                        <i class="fas fa-sync"></i> Vérifier auto-update
+                    </button>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>BinaryFormatter.Deserialize()</strong> - RCE possible</li>
+                    <li><strong>TypeNameHandling.All</strong> - Injection de types</li>
+                    <li><strong>MD5/SHA1</strong> - Algorithmes de hash cassés</li>
+                    <li><strong>HTTP pour updates</strong> - Pas de chiffrement</li>
+                    <li><strong>Assembly.LoadFrom()</strong> - Code arbitraire</li>
+                    <li><strong>Pas de SRI</strong> - CDN non vérifié</li>
+                    <li><strong>YAML unsafe load</strong> - Exécution de code</li>
+                    <li><strong>No signature verification</strong> - Code non signé</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Zone de résultats -->
+    <div class="mt-4" id="integrityResults" style="display:none;">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-shield-virus"></i> Résultat Integrity Failure</h6>
+            </div>
+            <div class="card-body">
+                <div id="integrityResultContent">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitor de désérialisation -->
+    <div class="mt-4" id="deserializationMonitor" style="display:none;">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-exclamation-triangle"></i> Désérialisation Monitor</h6>
+            </div>
+            <div class="card-body">
+                <div id="deserializationLog">
+                    <!-- Log des tentatives -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Désérialisation non sécurisée :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - BinaryFormatter
+var formatter = new BinaryFormatter();
+var obj = formatter.Deserialize(stream);
+
+// VULNÉRABLE - JSON.NET
+var settings = new JsonSerializerSettings {
+    TypeNameHandling = TypeNameHandling.All
+};</code></pre>
+
+                        <h6>Hash faible :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - MD5
+using (var md5 = MD5.Create()) {
+    var hash = md5.ComputeHash(bytes);
+}</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Updates non sécurisées :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - HTTP
+var updateUrl = "http://update.com/app.exe";
+client.DownloadFile(updateUrl, "app.exe");
+// Pas de vérification de signature!</code></pre>
+
+                        <h6>Plugin non vérifié :</h6>
+                        <pre class="small"><code>// VULNÉRABLE
+Assembly.LoadFrom(pluginPath);
+// Charge n'importe quelle DLL!</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Semgrep</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Types d'attaques d'intégrité -->
+    <div class="mt-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-bug"></i> Vecteurs d'attaque d'intégrité</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Désérialisation :</h6>
+                        <ul class="small">
+                            <li>BinaryFormatter gadget chains</li>
+                            <li>JSON.NET type confusion</li>
+                            <li>YAML code execution</li>
+                            <li>XML external entities</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Supply Chain :</h6>
+                        <ul class="small">
+                            <li>NPM package hijacking</li>
+                            <li>Dependency confusion</li>
+                            <li>Typosquatting</li>
+                            <li>Compromised CDNs</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Updates/Plugins :</h6>
+                        <ul class="small">
+                            <li>Unsigned binaries</li>
+                            <li>HTTP downloads</li>
+                            <li>No integrity checks</li>
+                            <li>Auto-update hijack</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Éviter BinaryFormatter</strong> : Utiliser System.Text.Json</li>
+                    <li><strong>Signature numérique</strong> : Vérifier tous les binaires</li>
+                    <li><strong>Hash sécurisé</strong> : SHA-256 minimum</li>
+                    <li><strong>HTTPS obligatoire</strong> : Pour toutes les mises à jour</li>
+                    <li><strong>Subresource Integrity</strong> : Pour tous les CDN</li>
+                    <li><strong>Sandboxing</strong> : Isoler les plugins</li>
+                    <li><strong>Pipeline sécurisé</strong> : CI/CD avec validations</li>
+                    <li><strong>Dependency scanning</strong> : Vérifier les vulnérabilités</li>
+                    <li><strong>Code signing</strong> : Signer tout le code distribué</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/integrity-failures.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.integrityData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/integrity-failures.js"></script>
+}

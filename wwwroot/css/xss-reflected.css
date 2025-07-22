@@ -1,0 +1,421 @@
+﻿/* xss-reflected.css - Styles spécifiques pour le module XSS Reflected */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #d73a49;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Zones de démonstration XSS Reflected */
+.xss-reflected-demo {
+    background-color: #fff9f5;
+    border: 2px dashed #fd7e14 !important;
+    position: relative;
+}
+
+    .xss-reflected-demo::before {
+        content: "⚠️ ZONE XSS REFLECTED";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #fd7e14;
+        color: white;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        font-weight: bold;
+        animation: pulse-orange 1s infinite;
+    }
+
+@keyframes pulse-orange {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Input pour paramètres reflétés */
+input[type="text"].form-control,
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    background-color: #fffaf7;
+}
+
+    input[type="text"].form-control:focus,
+    textarea.form-control:focus {
+        border-color: #fd7e14;
+        box-shadow: 0 0 0 0.2rem rgba(253, 126, 20, 0.25);
+        background-color: #fff;
+    }
+
+/* Zones de sortie XSS Reflected */
+#searchResults,
+#errorResults,
+#formResults,
+#cookieResults,
+.reflected-output {
+    min-height: 60px;
+    border: 2px solid #fd7e14;
+    background-color: #fffbf0;
+    padding: 15px;
+    border-radius: 5px;
+    position: relative;
+    overflow: auto;
+}
+
+    .reflected-output::after {
+        content: "🔄 CONTENU REFLÉTÉ";
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #fd7e14;
+        font-weight: bold;
+    }
+
+/* Cards de test XSS */
+.card.border-danger .card-header {
+    background-color: #dc3545;
+    border-bottom: 2px solid #bd2130;
+}
+
+.card.border-warning .card-header {
+    background-color: #ffc107;
+    border-bottom: 2px solid #e0a800;
+}
+
+.card.border-info .card-header {
+    background-color: #0dcaf0;
+    border-bottom: 2px solid #0baccc;
+}
+
+.card.border-success .card-header {
+    background-color: #198754;
+    border-bottom: 2px solid #146c43;
+}
+
+/* Boutons de payload */
+.btn-outline-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 202, 240, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-outline-dark:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(33, 37, 41, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Résultats de test */
+.test-result {
+    padding: 15px;
+    margin: 10px 0;
+    background-color: white;
+    border-radius: 5px;
+    border-left: 4px solid #fd7e14;
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Alert pour injection XSS Reflected */
+.xss-reflected-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #fd7e14;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.4);
+    z-index: 9999;
+    animation: bounce 0.5s;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+
+    25% {
+        transform: translateY(-10px);
+    }
+
+    75% {
+        transform: translateY(5px);
+    }
+}
+
+/* Code examples spécifiques XSS Reflected */
+pre.reflected-code {
+    font-size: 0.8rem;
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 15px;
+    border-radius: 6px;
+    border: 2px solid #fd7e14;
+    position: relative;
+}
+
+    pre.reflected-code::before {
+        content: "REFLECTED XSS";
+        position: absolute;
+        top: -8px;
+        right: 10px;
+        background-color: #fd7e14;
+        color: white;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+    pre.reflected-code code {
+        color: #f8f8f2;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+/* URL de test */
+.test-url {
+    font-family: 'Courier New', monospace;
+    color: #495057;
+    word-break: break-all;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+
+/* Paramètres vulnérables */
+.vulnerable-param {
+    display: inline-block;
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    border: 1px solid #ef5350;
+    font-weight: bold;
+}
+
+/* Contenu reflété */
+.reflected-content {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+    position: relative;
+}
+
+    .reflected-content::before {
+        content: "🔄 REFLECTED";
+        position: absolute;
+        top: -10px;
+        left: 15px;
+        background-color: #ffc107;
+        color: #212529;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Endpoints de test */
+.endpoint-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+.endpoint-item {
+    padding: 8px 12px;
+    margin: 5px 0;
+    background-color: white;
+    border-radius: 4px;
+    border-left: 3px solid #fd7e14;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    transition: all 0.2s ease;
+}
+
+    .endpoint-item:hover {
+        background-color: #fff9f5;
+        transform: translateX(5px);
+        box-shadow: 0 2px 4px rgba(253, 126, 20, 0.2);
+    }
+
+/* Badge pour type de vulnérabilité */
+.vuln-badge {
+    display: inline-block;
+    background-color: #fd7e14;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+/* Loading spinner pour tests */
+.reflected-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #fd7e14;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success indicator pour tests */
+.test-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 2px solid #c3e6cb;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 10px 0;
+    position: relative;
+}
+
+    .test-success::before {
+        content: "✓ TEST RÉUSSI";
+        position: absolute;
+        top: -10px;
+        left: 15px;
+        background-color: #28a745;
+        color: white;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .xss-reflected-demo {
+        padding: 10px !important;
+    }
+
+        .xss-reflected-demo::before {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+        }
+
+    .test-url {
+        font-size: 0.8rem;
+    }
+
+    .endpoint-item {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+}
+
+/* Highlight pour code dangereux */
+.dangerous-reflected {
+    position: relative;
+    margin: 10px 0;
+}
+
+    .dangerous-reflected::before {
+        content: "REFLECTED XSS";
+        position: absolute;
+        top: -8px;
+        right: 10px;
+        background-color: #fd7e14;
+        color: white;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Link styling pour tests */
+.test-link {
+    color: #fd7e14;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+    .test-link:hover {
+        color: #e8680a;
+        text-decoration: underline;
+        transform: scale(1.05);
+    }
+
+/* Footer warning pour XSS Reflected */
+.reflected-warning {
+    background-color: #721c24;
+    color: #f8d7da;
+    padding: 20px;
+    border-radius: 5px;
+    border: 2px solid #f5c6cb;
+    text-align: center;
+    margin-top: 20px;
+}
+
+    .reflected-warning i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+        color: #fd7e14;
+    }

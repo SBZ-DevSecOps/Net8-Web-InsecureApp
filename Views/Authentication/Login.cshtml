@@ -1,0 +1,21 @@
+﻿@{
+    ViewBag.Title = "Login";
+}
+<h2>Simulated Login</h2>
+
+<!-- ❌ Formulaire POST sans CSRF -->
+<form method="post" action="/Auth/TokenHmac">
+    <label>Username</label>
+    <input name="username" value="@ViewBag.Username" />
+
+    <label>Role</label>
+    <input name="role" value="@ViewBag.Role" />
+
+    <button type="submit">Get Token (HMAC)</button>
+</form>
+
+<form method="post" action="/Auth/TokenNone">
+    <input type="hidden" name="username" value="@ViewBag.Username" />
+    <input type="hidden" name="role" value="@ViewBag.Role" />
+    <button type="submit">Get Token (alg=none)</button>
+</form>

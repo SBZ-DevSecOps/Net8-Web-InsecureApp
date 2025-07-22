@@ -1,0 +1,201 @@
+﻿/* smtp-injection.css - Styles spécifiques pour le module SMTP Injection */
+
+/* Animations */
+.highlight-vulnerability {
+    animation: highlight-pulse 2s ease-in-out;
+    border-color: #dc3545 !important;
+}
+
+@keyframes highlight-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}
+
+/* Historique des tests */
+.history-entry {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+}
+
+    .history-entry:hover {
+        transform: translateX(5px);
+    }
+
+    .history-entry.success {
+        background-color: rgba(25, 135, 84, 0.1);
+        border-left: 3px solid #198754;
+    }
+
+    .history-entry.failed {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 3px solid #dc3545;
+    }
+
+    .history-entry code {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+    }
+
+    .history-entry .time {
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .history-entry .type {
+        font-weight: bold;
+        color: #495057;
+    }
+
+/* Zone d'historique */
+#testHistory {
+    font-family: 'Courier New', monospace;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+    #testHistory::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #testHistory::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    #testHistory::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        #testHistory::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+    }
+
+    #payloadExample.show {
+        animation: slideDown 0.3s ease;
+    }
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Formulaires et boutons */
+.btn-danger {
+    transition: all 0.3s ease;
+}
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    }
+
+/* Cards d'endpoints */
+.card {
+    transition: all 0.3s ease;
+}
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+/* Code blocks dans les résultats */
+pre code {
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* Badges */
+.badge {
+    margin-right: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+    .badge:hover {
+        transform: scale(1.1);
+    }
+
+/* Alertes animées */
+.alert {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Styles pour les formulaires de test */
+form.mt-2 {
+    display: inline-block;
+}
+
+/* Focus sur les inputs */
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Select personnalisé */
+select.form-control option[value=""] {
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .history-entry {
+        font-size: 0.8em;
+        padding: 6px 8px;
+    }
+
+        .history-entry code {
+            display: block;
+            margin-top: 4px;
+        }
+
+    pre.mt-2 {
+        font-size: 0.8em;
+        padding: 10px;
+    }
+}

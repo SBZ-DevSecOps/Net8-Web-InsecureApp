@@ -1,0 +1,493 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<DirectoryTraversalResult>
+
+@{
+    ViewData["Title"] = "Directory Traversal - Path Traversal";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies vulnérabilités Directory Traversal détectables par les outils SAST.
+        Accès non autorisé aux fichiers système, code source et données sensibles !
+    </div>
+
+    <h2>A01:2021 - Broken Access Control (Directory Traversal)</h2>
+    <p class="text-muted">Exploitation des chemins de fichiers pour accéder à des ressources non autorisées</p>
+
+    <!-- État de la sécurité -->
+    <div class="alert alert-warning">
+        <i class="fas fa-folder-open"></i> <strong>État de la sécurité :</strong>
+        Validation : <strong>AUCUNE</strong> | Sandbox : <strong>DÉSACTIVÉ</strong> |
+        Accès : <strong>SYSTÈME COMPLET</strong> | Filtres : <strong>BYPASSABLES</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="DirectoryTraversal" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque Directory Traversal</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Chemin / Fichier cible</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="../../../etc/passwd">
+                    <small class="form-text text-muted">
+                        Utilisez ../ ou ..\ pour remonter dans l'arborescence
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-folder-open"></i> Analyser la vulnérabilité
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces vulnérabilités Directory Traversal directement :</p>
+
+                @if (Model.AttackType == "basic-traversal")
+                {
+                    <strong>Lecture de fichiers avec traversal basique :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="basicTraversalForm">
+                            <div class="mb-3">
+                                <label class="form-label">Fichier à lire :</label>
+                                <input type="text" class="form-control" id="basicFilename" 
+                                       value="../../appsettings.json" placeholder="../../Program.cs">
+                                <small class="text-danger">Utilisez ../ ou ..\ pour remonter dans l'arborescence!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-file-code"></i> Lire le fichier
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="tryCommonFiles()">
+                                <i class="fas fa-list"></i> Fichiers sensibles de l'app
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "download-files")
+                {
+                    <strong>Téléchargement de fichiers arbitraires :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <div class="mb-3">
+                            <label class="form-label">Fichier à télécharger :</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="downloadFile" 
+                                       value="../../appsettings.json" placeholder="../../../etc/shadow">
+                                <button class="btn btn-danger" onclick="downloadTraversalFile()">
+                                    <i class="fas fa-download"></i> Télécharger
+                                </button>
+                            </div>
+                            <small class="text-muted">Le fichier sera téléchargé directement</small>
+                        </div>
+                    </div>
+                }
+                else if (Model.AttackType == "include-files")
+                {
+                    <strong>Inclusion de fichiers (code source) :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="includeForm">
+                            <div class="mb-3">
+                                <label class="form-label">Page/Fichier à inclure :</label>
+                                <input type="text" class="form-control" id="includePage" 
+                                       value="../../Shared/_Layout.cshtml" placeholder="../../../Controllers/HomeController.cs">
+                                <small class="text-danger">Expose le code source de l'application!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-code"></i> Inclure le fichier
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "encoding-bypass")
+                {
+                    <strong>Contournement par encodage :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Techniques d'encodage pour contourner les filtres :</p>
+                        <ul>
+                            <li><code>%2e%2e%2f</code> = <code>../</code> (URL encoding)</li>
+                            <li><code>%252e%252e%252f</code> = Double encoding</li>
+                            <li><code>..%c0%af</code> = Unicode encoding</li>
+                            <li><code>..%ef%bc%8f</code> = Fullwidth slash</li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="testEncodingBypass()">
+                        <i class="fas fa-percentage"></i> Tester les encodages
+                    </button>
+                }
+                else if (Model.AttackType == "null-byte")
+                {
+                    <strong>Null Byte Injection :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="nullByteForm">
+                            <div class="mb-3">
+                                <label class="form-label">Fichier avec null byte :</label>
+                                <input type="text" class="form-control" id="nullByteFile" 
+                                       value="../../../../etc/passwd%00.jpg" placeholder="../../../config.php%00.txt">
+                                <small class="text-danger">%00 termine la chaîne et bypass l'extension!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-cut"></i> Exploiter null byte
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "zip-slip")
+                {
+                    <strong>ZIP Slip (extraction malveillante) :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="zipSlipForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label class="form-label">Upload ZIP malveillant :</label>
+                                <input type="file" class="form-control" id="zipFile" accept=".zip">
+                                <small class="text-danger">ZIP contenant: ../../malicious.aspx</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-file-archive"></i> Extraire ZIP
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="createMaliciousZip()">
+                                <i class="fas fa-virus"></i> Générer ZIP malveillant
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "template-injection")
+                {
+                    <strong>Template Injection avec file read :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="templateForm">
+                            <div class="mb-3">
+                                <label class="form-label">Expression template :</label>
+                                <input type="text" class="form-control" id="templateExpr" 
+                                       value="{{file:/etc/passwd}}" placeholder="{{file:C:\Windows\win.ini}}">
+                                <small class="text-muted">Le moteur de template peut lire des fichiers!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-code"></i> Évaluer template
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "backup-files")
+                {
+                    <strong>Accès aux fichiers de sauvegarde :</strong>
+                    <br />
+                    <div class="traversal-form mt-3 p-3 border rounded">
+                        <form id="backupForm">
+                            <div class="mb-3">
+                                <label class="form-label">Fichier original :</label>
+                                <input type="text" class="form-control" id="backupFile" 
+                                       value="config.json" placeholder="web.config">
+                                <small class="text-muted">Recherche: .bak, ~, .old, .backup, .swp</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-history"></i> Chercher backups
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "windows-paths")
+                {
+                    <strong>Syntaxes Windows alternatives :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Windows accepte plusieurs syntaxes :</p>
+                        <ul>
+                            <li><code>..\..\file</code> - Backslash</li>
+                            <li><code>..//..//file</code> - Double slash</li>
+                            <li><code>\\?\C:\file</code> - UNC path</li>
+                            <li><code>file.txt::$DATA</code> - Alternate stream</li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="testWindowsPaths()">
+                        <i class="fab fa-windows"></i> Tester syntaxes Windows
+                    </button>
+                }
+
+                <div class="mt-3">
+                    <button class="btn btn-warning btn-sm" onclick="listCurrentDirectory()">
+                        <i class="fas fa-folder-tree"></i> Lister le répertoire
+                    </button>
+                    <a href="/DirectoryTraversal/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Tous les endpoints
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Path.Combine(userInput)</strong> - Sans validation</li>
+                    <li><strong>No canonical path check</strong> - GetFullPath() non vérifié</li>
+                    <li><strong>File.ReadAllText(userPath)</strong> - Lecture directe</li>
+                    <li><strong>Directory listing</strong> - Énumération possible</li>
+                    <li><strong>ZIP extraction</strong> - Sans validation des entrées</li>
+                    <li><strong>Multiple encodings</strong> - URL, Unicode, etc.</li>
+                    <li><strong>Backup patterns</strong> - .bak, ~, .old accessibles</li>
+                    <li><strong>Template injection</strong> - Évaluation non sécurisée</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Zone de résultats -->
+    <div class="mt-4" id="traversalResults" style="display:none;">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-folder-open"></i> Résultat Directory Traversal</h6>
+            </div>
+            <div class="card-body">
+                <div id="traversalResultContent">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Browser -->
+    <div class="mt-4" id="fileBrowser" style="display:none;">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-folder-tree"></i> Explorateur de fichiers</h6>
+            </div>
+            <div class="card-body">
+                <div id="currentPath" class="mb-2">
+                    <strong>Chemin actuel:</strong> <code id="pathDisplay">/</code>
+                </div>
+                <div id="fileList" class="file-browser">
+                    <!-- Liste des fichiers/dossiers -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Path traversal basique :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Pas de validation
+var path = Path.Combine(baseDir, userInput);
+var content = File.ReadAllText(path);</code></pre>
+
+                        <h6>Download sans vérification :</h6>
+                        <pre class="small"><code>// VULNÉRABLE
+var file = Request.Query["file"];
+return File(filePath, "application/octet-stream");</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>ZIP Slip :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Extraction directe
+foreach (var entry in archive.Entries) {
+    entry.ExtractToFile(Path.Combine(
+        destPath, entry.FullName));
+}</code></pre>
+
+                        <h6>Template injection :</h6>
+                        <pre class="small"><code>// VULNÉRABLE
+if (template.Contains("file:")) {
+    var content = File.ReadAllText(path);
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Semgrep</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Fichiers sensibles communs -->
+    <div class="mt-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-file-alt"></i> Fichiers sensibles courants</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6>Application ASP.NET :</h6>
+                        <ul class="small">
+                            <li><code>../../appsettings.json</code></li>
+                            <li><code>../../Program.cs</code></li>
+                            <li><code>../../web.config</code></li>
+                            <li><code>../../../*.csproj</code></li>
+                            <li><code>../../bin/Debug/*.dll</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Configuration :</h6>
+                        <ul class="small">
+                            <li><code>../.env</code></li>
+                            <li><code>../config.json</code></li>
+                            <li><code>secret/passwords.txt</code></li>
+                            <li><code>private/api-keys.json</code></li>
+                            <li><code>backup/users.csv</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Code source :</h6>
+                        <ul class="small">
+                            <li><code>Controllers/*.cs</code></li>
+                            <li><code>Models/*.cs</code></li>
+                            <li><code>Views/**/*.cshtml</code></li>
+                            <li><code>wwwroot/js/*.js</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Backups :</h6>
+                        <ul class="small">
+                            <li><code>*.bak</code></li>
+                            <li><code>*~</code></li>
+                            <li><code>*.old</code></li>
+                            <li><code>*.backup</code></li>
+                            <li><code>.git/config</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Validation stricte des chemins</strong> : Rejeter ../ et ..\</li>
+                    <li><strong>Canonical path check</strong> : Vérifier que le chemin reste dans le dossier autorisé</li>
+                    <li><strong>Whitelist de fichiers</strong> : Liste explicite des fichiers autorisés</li>
+                    <li><strong>Sandbox/Chroot</strong> : Isolation du processus</li>
+                    <li><strong>Permissions minimales</strong> : Principe du moindre privilège</li>
+                    <li><strong>Pas d'input direct</strong> : Utiliser des IDs mappés aux fichiers</li>
+                    <li><strong>Validation des archives</strong> : Vérifier les chemins dans les ZIP</li>
+                    <li><strong>Désactiver les backups</strong> : Nettoyer les fichiers temporaires</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/directory-traversal.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.traversalData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/directory-traversal.js"></script>
+}

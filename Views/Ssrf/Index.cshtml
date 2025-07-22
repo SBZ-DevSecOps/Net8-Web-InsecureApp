@@ -1,0 +1,494 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<SSRFResult>
+
+@{
+    ViewData["Title"] = "SSRF - Server-Side Request Forgery";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies vulnérabilités SSRF détectables par les outils SAST.
+        Le serveur peut faire des requêtes vers des ressources internes, métadonnées cloud et fichiers locaux !
+    </div>
+
+    <h2>A10:2021 - SSRF (Server-Side Request Forgery)</h2>
+    <p class="text-muted">Le serveur fait des requêtes HTTP non validées permettant l'accès aux ressources internes</p>
+
+    <!-- État du réseau -->
+    <div class="alert alert-warning">
+        <i class="fas fa-network-wired"></i> <strong>Configuration réseau :</strong>
+        Accès : <strong>Internet + Intranet</strong> | Cloud : <strong>AWS/Azure/GCP</strong> |
+        Protocoles : <strong>HTTP, HTTPS, FILE, GOPHER</strong> | Validation : <strong>AUCUNE</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="SSRF" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque SSRF</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">URL / Endpoint cible</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="http://localhost/admin">
+                    <small class="form-text text-muted">
+                        L'URL sera automatiquement remplie selon votre sélection
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-satellite-dish"></i> Analyser la vulnérabilité SSRF
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces vulnérabilités SSRF directement :</p>
+
+                @if (Model.AttackType == "url-fetch")
+                {
+                    <strong>Récupération d'URL sans validation :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="urlFetchForm">
+                            <div class="mb-3">
+                                <label class="form-label">URL à récupérer (interne ou externe) :</label>
+                                <input type="text" class="form-control" id="fetchUrl" name="url"
+                                       value="http://localhost:80" placeholder="http://internal-service/api">
+                                <small class="text-danger">Essayez : localhost, 127.0.0.1, 192.168.x.x, 10.x.x.x</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-download"></i> Récupérer l'URL
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "cloud-metadata")
+                {
+                    <strong>Accès aux métadonnées cloud :</strong>
+                    <br />
+                    <div class="mt-2">
+                        <button class="btn btn-danger btn-sm" onclick="checkCloudMetadata('aws')">
+                            <i class="fab fa-aws"></i> AWS Metadata
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="checkCloudMetadata('azure')">
+                            <i class="fab fa-microsoft"></i> Azure Metadata
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="checkCloudMetadata('gcp')">
+                            <i class="fab fa-google"></i> GCP Metadata
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <code>http://169.254.169.254/latest/meta-data/</code>
+                    </div>
+                }
+                else if (Model.AttackType == "internal-scan")
+                {
+                    <strong>Scanner de ports interne :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="portScanForm">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <input type="text" class="form-control" id="scanHost" name="host"
+                                           value="127.0.0.1" placeholder="Host interne">
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-control" id="scanPort" name="port"
+                                           value="22" placeholder="Port">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-radar"></i> Scanner le port
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="scanCommonPorts()">
+                                    <i class="fas fa-list"></i> Scan ports communs
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "file-protocol")
+                {
+                    <strong>Lecture de fichiers locaux :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="fileReadForm">
+                            <div class="mb-3">
+                                <label class="form-label">Ressource (protocoles multiples) :</label>
+                                <input type="text" class="form-control" id="resourceUrl" name="resource"
+                                       value="file:///etc/passwd" placeholder="file:///c:/windows/win.ini">
+                                <small class="text-muted">Supporte : file://, http://, gopher://, dict://</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-file-code"></i> Lire la ressource
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "bypass-blacklist")
+                {
+                    <strong>Contournement de blacklist :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>La blacklist bloque : localhost, 127.0.0.1, 169.254.169.254</p>
+                        <p><strong>Techniques de contournement :</strong></p>
+                        <ul>
+                            <li><code>127.0.0.1</code> → <code>127.1</code> ou <code>0x7f000001</code></li>
+                            <li><code>localhost</code> → <code>localtest.me</code> ou <code>127.0.0.1.nip.io</code></li>
+                            <li><code>169.254.169.254</code> → <code>0xa9fea9fe</code> ou <code>2852039166</code></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="testBypass()">
+                        <i class="fas fa-mask"></i> Tester les contournements
+                    </button>
+                }
+                else if (Model.AttackType == "pdf-generation")
+                {
+                    <strong>SSRF via génération de PDF :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="pdfForm">
+                            <div class="mb-3">
+                                <label class="form-label">Contenu HTML pour PDF :</label>
+                                <textarea class="form-control" id="htmlContent" name="htmlContent" rows="4">&lt;h1&gt;Rapport&lt;/h1&gt;
+&lt;img src="http://localhost:8080/internal/api/users.json"&gt;
+&lt;img src="http://169.254.169.254/latest/meta-data/"&gt;</textarea>
+                                <small class="text-danger">Les images seront chargées par le générateur PDF!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-file-pdf"></i> Générer PDF (avec SSRF)
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "dns-rebinding")
+                {
+                    <strong>DNS Rebinding Attack :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Le DNS peut changer entre la validation et la requête réelle!</p>
+                        <p><strong>Attaque :</strong> Un domaine qui résout d'abord vers une IP publique, puis vers une IP interne</p>
+                    </div>
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="dnsRebindingForm">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="rebindDomain"
+                                       value="http://rebind.network" placeholder="http://attacker-domain.com">
+                                <small class="text-muted">Utilisez un service de DNS rebinding ou votre propre domaine</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-sync"></i> Tester DNS Rebinding
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "redis-ssrf")
+                {
+                    <strong>Interaction avec Redis via Gopher :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="redisForm">
+                            <div class="mb-3">
+                                <label class="form-label">Commande Redis :</label>
+                                <select class="form-control" id="redisCommand">
+                                    <option value="INFO">INFO - Informations serveur</option>
+                                    <option value="SET key value">SET key value</option>
+                                    <option value="GET key">GET key</option>
+                                    <option value="FLUSHALL">FLUSHALL - Effacer toutes les données</option>
+                                    <option value="CONFIG GET *">CONFIG GET * - Configuration</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-database"></i> Exécuter commande Redis
+                            </button>
+                        </form>
+                        <small class="text-warning">Note: Gopher n'est pas supporté nativement en .NET mais fonctionne dans d'autres frameworks</small>
+                    </div>
+                }
+                else if (Model.AttackType == "blind-ssrf")
+                {
+                    <strong>Blind SSRF (timing-based) :</strong>
+                    <br />
+                    <div class="ssrf-form mt-3 p-3 border rounded">
+                        <form id="blindForm">
+                            <div class="mb-3">
+                                <label class="form-label">Cible (pas de contenu retourné) :</label>
+                                <input type="text" class="form-control" id="blindTarget"
+                                       value="http://192.168.1.100:22" placeholder="http://internal:port">
+                                <small class="text-muted">Le timing révèle si le service existe</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-clock"></i> Test Blind SSRF
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" onclick="blindScanRange()">
+                                <i class="fas fa-network-wired"></i> Scanner 192.168.1.1-10
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "parser-confusion")
+                {
+                    <strong>Parser Confusion :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Différents parseurs d'URL peuvent interpréter la même URL différemment!</p>
+                        <ul>
+                            <li><code>http://expected.com#@@evil.com/</code></li>
+                            <li><code>http://expected.com@evil.com/</code></li>
+                            <li><code>http://evil.com#.expected.com/</code></li>
+                            <li><code>http://127.0.0.1:80\@@google.com/</code></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="testParserConfusion()">
+                        <i class="fas fa-random"></i> Tester les confusions de parseur
+                    </button>
+                }
+
+                <div class="mt-3">
+                    <a href="/SSRF/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Tous les endpoints
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>HttpClient.GetAsync(userInput)</strong> - Sans validation d'URL</li>
+                    <li><strong>No URL whitelist</strong> - Accepte toutes les URLs</li>
+                    <li><strong>Protocol confusion</strong> - file://, gopher://, dict://</li>
+                    <li><strong>Weak blacklist</strong> - Facilement contournable</li>
+                    <li><strong>Cloud metadata access</strong> - 169.254.169.254</li>
+                    <li><strong>Internal network access</strong> - RFC1918 addresses</li>
+                    <li><strong>DNS rebinding</strong> - Pas de validation après résolution</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Zone de résultats SSRF -->
+    <div class="mt-4" id="ssrfResults" style="display:none;">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-satellite-dish"></i> Résultat SSRF</h6>
+            </div>
+            <div class="card-body">
+                <div id="ssrfResultContent">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Fetch URL sans validation :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Pas de validation
+var response = await httpClient.GetAsync(url);
+var content = await response.Content.ReadAsStringAsync();</code></pre>
+
+                        <h6>Support multi-protocoles :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - file:// protocol
+if (resource.StartsWith("file://")) {
+    var content = File.ReadAllText(path);
+}</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Blacklist faible :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Contournable
+var blacklist = new[] { "localhost", "127.0.0.1" };
+if (!blacklist.Contains(host)) {
+    // 127.1, 0x7f000001 passent!
+}</code></pre>
+
+                        <h6>Métadonnées cloud :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - AWS metadata
+httpClient.GetAsync(
+    "http://169.254.169.254/latest/meta-data/"
+);</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Semgrep</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cibles SSRF communes -->
+    <div class="mt-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-crosshairs"></i> Cibles SSRF communes</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Services internes :</h6>
+                        <ul class="small">
+                            <li><code>http://localhost/admin</code></li>
+                            <li><code>http://127.0.0.1:8080</code></li>
+                            <li><code>http://192.168.1.1</code></li>
+                            <li><code>http://10.0.0.1</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Cloud Metadata :</h6>
+                        <ul class="small">
+                            <li><code>169.254.169.254</code></li>
+                            <li><code>metadata.google.internal</code></li>
+                            <li><code>instance-data</code></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Fichiers locaux :</h6>
+                        <ul class="small">
+                            <li><code>file:///etc/passwd</code></li>
+                            <li><code>file:///proc/self/environ</code></li>
+                            <li><code>file:///c:/windows/win.ini</code></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Whitelist d'URLs</strong> : Seulement les domaines autorisés</li>
+                    <li><strong>Blocage des IPs privées</strong> : RFC1918, loopback, link-local</li>
+                    <li><strong>Protocoles restreints</strong> : HTTP/HTTPS uniquement</li>
+                    <li><strong>Validation après résolution DNS</strong></li>
+                    <li><strong>Timeout courts</strong> : Éviter les scans</li>
+                    <li><strong>Pas de redirection</strong> : Ou validation à chaque hop</li>
+                    <li><strong>WAF/Proxy</strong> : Filtrage au niveau réseau</li>
+                    <li><strong>IMDSv2</strong> : Pour AWS, forcer les tokens</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ssrf.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.ssrfData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/ssrf.js"></script>
+}

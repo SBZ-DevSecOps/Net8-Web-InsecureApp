@@ -1,0 +1,333 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<XPathResult>
+
+@{
+    ViewData["Title"] = "XPath Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application simule des vulnérabilités XPath pour des fins éducatives.
+        Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>XPath Injection - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection XPath sur des données XML (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionXpath" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            var payloadExample = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.PayloadExample ?? "");
+                            var riskLevel = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.RiskLevel ?? "");
+
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@payloadExample"
+                                    data-risk-level="@riskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple de payload :</strong><br />
+                    <code id="payloadExampleContent"></code>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload à tester</label>
+                    <input type="text" id="payload" name="payload" class="form-control"
+                           value="@Model.Payload" placeholder="Entrez votre payload XPath..." />
+                    <small class="form-text text-muted">
+                        Simule une recherche d'utilisateur dans un document XML (ex: admin, john.doe)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-code"></i> Exécuter la requête XPath
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - XPath Injection</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Requête XPath exécutée -->
+    @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+    {
+        <div class="mb-3">
+            <h5>Requête XPath exécutée :</h5>
+            <pre class="bg-dark text-light p-3 border rounded">@Model.ExecutedSql</pre>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'exécution</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+            {
+                <p><strong>Requête XPath tentée :</strong></p>
+                <div class="bg-light p-2 border rounded">
+                    <code>@Model.ExecutedSql</code>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@attackInfo.ErrorExplanation</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <h5><i class="fas fa-sitemap"></i> Résultats XPath (@Model.Results.Count nœuds)</h5>
+
+            @foreach (var result in Model.Results)
+            {
+                <div class="card mt-3">
+                    <div class="card-header bg-dark text-white">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>Nœud:</strong> @result.NodePath</span>
+                            <span class="badge bg-info">@result.NodeType</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (result.Attributes.Any())
+                        {
+                            <h6 class="text-muted mb-2">Attributs:</h6>
+                            <table class="table table-sm table-bordered mb-3">
+                                <tbody>
+                                    @foreach (var attr in result.Attributes.OrderBy(a => a.Key))
+                                    {
+                                        <tr>
+                                            <td class="attribute-name"><strong>@attr.Key</strong></td>
+                                            <td>
+                                                @if (attr.Key.ToLower() == "role" && attr.Value.ToLower() == "admin")
+                                                {
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-user-shield"></i> @attr.Value
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    @attr.Value
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+
+                        @if (result.Elements.Any())
+                        {
+                            <h6 class="text-muted mb-2">Éléments:</h6>
+                            <table class="table table-sm table-hover">
+                                <tbody>
+                                    @foreach (var elem in result.Elements.OrderBy(e => e.Key))
+                                    {
+                                        <tr>
+                                            <td class="element-name"><strong>@elem.Key</strong></td>
+                                            <td>
+                                                @if (elem.Key.ToLower() == "password" || elem.Key.ToLower() == "secretkey")
+                                                {
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-lock"></i> @elem.Value
+                                                    </span>
+                                                }
+                                                else if (elem.Key.ToLower() == "creditcard" || elem.Key.ToLower() == "ssn")
+                                                {
+                                                    <span class="text-warning">
+                                                        <i class="fas fa-exclamation-triangle"></i> @elem.Value
+                                                    </span>
+                                                }
+                                                else if (elem.Key.ToLower() == "dbconnection" || elem.Key.ToLower() == "apikey")
+                                                {
+                                                    <span class="text-danger">
+                                                        <i class="fas fa-key"></i> @elem.Value
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    @elem.Value
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Analyse des résultats -->
+            @{
+                var hasSensitiveData = Model.Results.Any(r =>
+                r.Elements.Keys.Any(k => k.ToLower() == "password" || k.ToLower() == "secretkey" ||
+                k.ToLower() == "creditcard" || k.ToLower() == "ssn" ||
+                k.ToLower() == "dbconnection" || k.ToLower() == "apikey"));
+                var hasAdminAccess = Model.Results.Any(r =>
+                r.Attributes.Any(a => a.Key.ToLower() == "role" && a.Value.ToLower() == "admin"));
+                var hasMultipleUsers = Model.Results.Count > 1;
+            }
+
+            @if (hasSensitiveData || hasAdminAccess || hasMultipleUsers)
+            {
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="fas fa-search"></i> Analyse des résultats :</h6>
+                    <ul class="mb-0">
+                        @if (hasSensitiveData)
+                        {
+                            <li><strong>Données sensibles exposées :</strong> L'injection a permis d'accéder à des mots de passe, clés API ou autres données confidentielles.</li>
+                        }
+                        @if (hasAdminAccess)
+                        {
+                            <li><strong>Accès administrateur détecté :</strong> Des comptes avec privilèges administrateur ont été exposés.</li>
+                        }
+                        @if (hasMultipleUsers)
+                        {
+                            <li><strong>Bypass de restriction :</strong> L'injection a retourné plusieurs utilisateurs, contournant les restrictions de recherche.</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.AttackType) && string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle"></i> Aucun nœud XML trouvé.
+            La requête XPath n'a retourné aucun résultat.
+        </div>
+    }
+
+    <!-- Structure XML de référence -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-file-code"></i> Structure XML (référence)</h6>
+            </div>
+            <div class="card-body">
+                <pre class="mb-0">@Html.Raw("&lt;users&gt;\n  &lt;user id=\"...\" role=\"...\"&gt;\n    &lt;username&gt;...&lt;/username&gt;\n    &lt;password&gt;...&lt;/password&gt;\n    &lt;email&gt;...&lt;/email&gt;\n    &lt;fullname&gt;...&lt;/fullname&gt;\n    &lt;lastlogin&gt;...&lt;/lastlogin&gt;\n    &lt;!-- Autres éléments sensibles --&gt;\n  &lt;/user&gt;\n  &lt;config&gt;\n    &lt;!-- Configuration système --&gt;\n  &lt;/config&gt;\n&lt;/users&gt;")</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Requêtes paramétrées :</strong> Utilisez des APIs XPath sécurisées avec des paramètres</li>
+                    <li><strong>Validation stricte :</strong> Validez et échappez tous les caractères spéciaux XPath</li>
+                    <li><strong>Liste blanche :</strong> N'autorisez que les caractères alphanumériques quand possible</li>
+                    <li><strong>Éviter l'évaluation dynamique :</strong> Préférez des requêtes XPath statiques</li>
+                    <li><strong>Principe du moindre privilège :</strong> Limitez l'accès aux nœuds sensibles du XML</li>
+                    <li><strong>Validation du schéma :</strong> Utilisez XSD pour valider la structure XML</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light history-container">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xpath-injection.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos))
+    </script>
+
+    <script>
+        window.xpathInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<XPathResult>())
+        };
+    </script>
+
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/xpath-injection.js"></script>
+}

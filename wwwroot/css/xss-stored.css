@@ -1,0 +1,734 @@
+﻿/* xss-stored.css - Styles spécifiques pour le module XSS Stored (Persistent) */
+
+/* Zone d'exemple de payload XSS Stored */
+#payloadExample {
+    transition: all 0.3s ease;
+    border: 2px solid #dc3545;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dc3545;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+        position: relative;
+    }
+
+        #payloadExample pre::before {
+            content: "💾 STORED";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            background-color: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+    #payloadExample code {
+        color: #dc3545;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+/* Zones de démonstration XSS Stored - ROUGE pour danger critique */
+.xss-stored-demo {
+    background-color: #fff5f5;
+    border: 3px solid #dc3545 !important;
+    position: relative;
+    animation: danger-pulse 2s infinite;
+}
+
+    .xss-stored-demo::before {
+        content: "💀 XSS STORED - PERMANENT";
+        position: absolute;
+        top: -15px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 3px 12px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.5);
+        z-index: 10;
+    }
+
+@keyframes danger-pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}
+
+/* Input pour contenu stocké */
+input[type="text"].form-control,
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    background-color: #fff9f9;
+    border: 2px solid #dc3545;
+}
+
+    input[type="text"].form-control:focus,
+    textarea.form-control:focus {
+        border-color: #b02a37;
+        box-shadow: 0 0 0 0.3rem rgba(220, 53, 69, 0.25);
+        background-color: #fff;
+    }
+
+/* Zones de contenu stocké */
+.stored-content,
+#commentResult,
+#profileResult,
+#forumResult,
+#guestResult,
+.stored-comment,
+.stored-profile {
+    min-height: 60px;
+    border: 3px solid #dc3545;
+    background-color: #fff5f5;
+    padding: 15px;
+    border-radius: 8px;
+    position: relative;
+    overflow: auto;
+    margin: 10px 0;
+}
+
+    .stored-content::after {
+        content: "💾 CONTENU STOCKÉ PERMANENT";
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #dc3545;
+        font-weight: bold;
+        background-color: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 1px solid #dc3545;
+    }
+
+/* Cards de stockage XSS - thème rouge critique */
+.card.border-danger {
+    border-width: 3px;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+    .card.border-danger .card-header {
+        background-color: #dc3545;
+        border-bottom: 3px solid #b02a37;
+        color: white;
+        font-weight: bold;
+    }
+
+.card.border-warning .card-header {
+    background-color: #ffc107;
+    border-bottom: 3px solid #e0a800;
+    color: #212529;
+    font-weight: bold;
+}
+
+.card.border-info .card-header {
+    background-color: #0dcaf0;
+    border-bottom: 3px solid #0baccc;
+    color: white;
+    font-weight: bold;
+}
+
+.card.border-success .card-header {
+    background-color: #198754;
+    border-bottom: 3px solid #146c43;
+    color: white;
+    font-weight: bold;
+}
+
+/* Boutons de payload XSS Stored - effets dramatiques */
+.btn-outline-danger:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(220, 53, 69, 0.4);
+    transition: all 0.3s ease;
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-outline-warning:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(255, 193, 7, 0.4);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-info:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(13, 202, 240, 0.4);
+    transition: all 0.3s ease;
+}
+
+.btn-outline-dark:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 12px rgba(33, 37, 41, 0.4);
+    transition: all 0.3s ease;
+    background-color: #212529;
+    border-color: #212529;
+    color: white;
+}
+
+/* Résultats de stockage XSS */
+.stored-result {
+    padding: 20px;
+    margin: 15px 0;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+    border-radius: 8px;
+    border: 3px solid #dc3545;
+    position: relative;
+    animation: stored-appear 0.5s ease-out;
+}
+
+    .stored-result::before {
+        content: "💾 STOCKÉ EN BASE";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    }
+
+@keyframes stored-appear {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Alert pour XSS Stored critique */
+.xss-stored-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    color: white;
+    padding: 20px 25px;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(220, 53, 69, 0.6);
+    z-index: 9999;
+    animation: critical-shake 0.8s;
+    border: 2px solid #fff;
+}
+
+    .xss-stored-alert::before {
+        content: "💀";
+        font-size: 1.5rem;
+        margin-right: 10px;
+    }
+
+@keyframes critical-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-10px);
+    }
+
+    20%, 40%, 60%, 80% {
+        transform: translateX(10px);
+    }
+}
+
+/* Code examples pour XSS Stored */
+pre.stored-code {
+    font-size: 0.85rem;
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    color: #f8f8f2;
+    padding: 20px;
+    border-radius: 8px;
+    border: 3px solid #dc3545;
+    position: relative;
+    overflow-x: auto;
+}
+
+    pre.stored-code::before {
+        content: "💾 STORED XSS";
+        position: absolute;
+        top: -12px;
+        right: 15px;
+        background-color: #dc3545;
+        color: white;
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+    pre.stored-code code {
+        color: #f8f8f2;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+/* Impact de persistance */
+.persistence-indicator {
+    display: inline-block;
+    background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-left: 10px;
+    position: relative;
+    animation: persistence-glow 2s infinite;
+}
+
+    .persistence-indicator::before {
+        content: "♾️";
+        margin-right: 5px;
+    }
+
+@keyframes persistence-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(220, 53, 69, 0.8);
+    }
+}
+
+/* Niveau de criticité */
+.critical-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #721c24 0%, #dc3545 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+    border: 2px solid #fff;
+}
+
+/* Loading spinner pour stockage */
+.stored-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #dc3545;
+    border-radius: 50%;
+    animation: stored-spin 1s linear infinite;
+    margin-left: 15px;
+}
+
+@keyframes stored-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Success indicator pour stockage permanent */
+.storage-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: 3px solid #28a745;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 15px 0;
+    position: relative;
+    animation: storage-confirm 0.6s ease-out;
+}
+
+    .storage-success::before {
+        content: "💾 STOCKAGE RÉUSSI";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #28a745;
+        color: white;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+@keyframes storage-confirm {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Zones de contenu stocké actuel */
+#storedComments,
+#storedProfiles {
+    max-height: 400px;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+    border: 3px solid #dc3545;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.stored-comment,
+.stored-profile {
+    background-color: white;
+    border: 2px solid #dc3545;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+    .stored-comment:hover,
+    .stored-profile:hover {
+        background-color: #fff9f9;
+        transform: translateX(5px);
+        box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+    }
+
+    .stored-comment::after,
+    .stored-profile::after {
+        content: "⚠️";
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+/* Indicateur d'utilisateurs affectés */
+.affected-users {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 2px solid #ffc107;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin: 10px 0;
+    font-weight: bold;
+    position: relative;
+}
+
+    .affected-users::before {
+        content: "👥";
+        margin-right: 8px;
+        font-size: 1.2rem;
+    }
+
+/* Timeline de persistance */
+.persistence-timeline {
+    background: linear-gradient(135deg, #e2e3e5 0%, #d1d3d4 100%);
+    border: 2px solid #6c757d;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+    position: relative;
+}
+
+    .persistence-timeline::before {
+        content: "⏰ CHRONOLOGIE DE L'ATTAQUE";
+        position: absolute;
+        top: -12px;
+        left: 15px;
+        background-color: #6c757d;
+        color: white;
+        padding: 4px 12px;
+        font-size: 0.7rem;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+/* Admin target styling */
+.admin-target {
+    background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+    color: white;
+    border: 3px solid #ffc107;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    position: relative;
+}
+
+    .admin-target::before {
+        content: "🎯 CIBLE ADMINISTRATEUR";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #ffc107;
+        color: #212529;
+        padding: 4px 12px;
+        font-size: 0.8rem;
+        border-radius: 4px;
+        font-weight: bold;
+    }
+
+/* Responsive design pour mobile */
+@media (max-width: 768px) {
+    .xss-stored-demo {
+        padding: 10px !important;
+    }
+
+        .xss-stored-demo::before {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            top: -10px;
+            left: 10px;
+        }
+
+    .stored-content::after {
+        font-size: 0.6rem;
+        padding: 1px 4px;
+        top: 3px;
+        right: 5px;
+    }
+
+    .btn-outline-danger,
+    .btn-outline-warning,
+    .btn-outline-info,
+    .btn-outline-dark {
+        font-size: 0.8rem;
+        padding: 6px 10px;
+    }
+
+    pre.stored-code {
+        font-size: 0.75rem;
+        padding: 15px;
+    }
+}
+
+/* Highlight pour code dangereux stocké */
+.dangerous-stored {
+    position: relative;
+    margin: 15px 0;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffebee 100%);
+    border: 3px solid #dc3545;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+    .dangerous-stored::before {
+        content: "💾 STORED XSS CRITIQUE";
+        position: absolute;
+        top: -12px;
+        right: 15px;
+        background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+        color: white;
+        padding: 4px 12px;
+        font-size: 0.75rem;
+        border-radius: 4px;
+        font-weight: bold;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    }
+
+/* Link styling pour tests de stockage */
+.storage-test-link {
+    color: #dc3545;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+}
+
+    .storage-test-link:hover {
+        color: #b02a37;
+        text-decoration: none;
+        border-bottom-color: #dc3545;
+        transform: scale(1.05);
+    }
+
+/* Footer warning pour XSS Stored */
+.stored-warning {
+    background: linear-gradient(135deg, #721c24 0%, #dc3545 100%);
+    color: #f8d7da;
+    padding: 25px;
+    border-radius: 8px;
+    border: 3px solid #f5c6cb;
+    text-align: center;
+    margin-top: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+    .stored-warning::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: repeating-linear-gradient( 45deg, transparent, transparent 10px, rgba(255,255,255,0.1) 10px, rgba(255,255,255,0.1) 20px );
+        animation: warning-stripes 10s linear infinite;
+    }
+
+    .stored-warning i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        display: block;
+        color: #ffc107;
+        text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        position: relative;
+        z-index: 1;
+    }
+
+    .stored-warning h6,
+    .stored-warning p {
+        position: relative;
+        z-index: 1;
+    }
+
+@keyframes warning-stripes {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Tooltip pour explications XSS Stored */
+.stored-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+    .stored-tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #dc3545;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .stored-tooltip:hover::after {
+        opacity: 1;
+        visibility: visible;
+    }
+
+/* Styles pour les métriques d'impact */
+.impact-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.impact-metric {
+    background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    position: relative;
+}
+
+    .impact-metric::before {
+        content: attr(data-icon);
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .impact-metric h6 {
+        color: #dc3545;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .impact-metric p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+/* Animation pour les données en temps réel */
+.real-time-data {
+    animation: data-update 3s ease-in-out infinite;
+}
+
+@keyframes data-update {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.02);
+    }
+}
+
+/* Fin du fichier CSS XSS Stored */
+.card-body {
+    background-color: white !important;
+    color: #212529 !important;
+}
+
+    .card-body h6, .card-body p, .card-body strong, .card-body li {
+        color: #212529 !important;
+    }
+
+pre, code {
+    background-color: #f8f9fa !important;
+    color: #212529 !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.stored-content {
+    background-color: #fff5f5 !important;
+    border: 2px dashed #dc3545 !important;
+}
+
+    .stored-content::after {
+        content: "💾 STOCKÉ";
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #dc3545;
+        font-weight: bold;
+    }

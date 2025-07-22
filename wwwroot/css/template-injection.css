@@ -1,0 +1,247 @@
+﻿/* template-injection.css - Styles spécifiques pour le module Template Injection */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+    }
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Historique des tests */
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-entry {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+    .history-entry:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-entry.exploit-success {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left: 4px solid #dc3545;
+    }
+
+    .history-entry.exploit-failed {
+        background-color: rgba(25, 135, 84, 0.1);
+        border-left: 4px solid #198754;
+    }
+
+    .history-entry .time {
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 0.85em;
+    }
+
+    .history-entry .type {
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .history-entry .payload-preview {
+        margin-top: 5px;
+    }
+
+    .history-entry code {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+        word-break: break-all;
+    }
+
+/* Textarea amélioré */
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Cards avec highlight danger */
+.card.highlight-danger {
+    animation: pulse-danger 2s ease-in-out;
+    border-color: #dc3545 !important;
+    border-width: 2px;
+}
+
+@keyframes pulse-danger {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}
+
+/* Icône skull animée */
+.fa-skull-crossbones {
+    animation: skull-pulse 2s infinite;
+}
+
+@keyframes skull-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(1.1);
+    }
+}
+
+/* Pre blocks dans les exemples */
+pre.mt-2 {
+    background-color: #f8f9fa;
+    color: #212529;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    margin-top: 0.5rem !important;
+    font-size: 0.875rem;
+}
+
+/* Boutons danger améliorés */
+.btn-danger {
+    transition: all 0.3s ease;
+}
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+
+/* Badges */
+.badge {
+    margin-right: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+    .badge:hover {
+        transform: scale(1.1);
+    }
+
+/* Cards d'endpoints */
+.card {
+    transition: all 0.3s ease;
+}
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+/* Focus sur les inputs */
+.form-control:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Select options */
+select.form-control option[value=""] {
+    color: #6c757d;
+}
+
+/* Code blocks dans les cards */
+.card pre {
+    margin-bottom: 0;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.card code {
+    color: #e83e8c;
+    background-color: transparent;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .history-entry {
+        font-size: 0.85em;
+        padding: 8px 12px;
+    }
+
+        .history-entry .payload-preview {
+            margin-top: 8px;
+        }
+
+    pre.mt-2 {
+        font-size: 0.75rem;
+        padding: 8px;
+    }
+
+    textarea.form-control {
+        min-height: 100px;
+    }
+}
+
+/* Scrollbar personnalisée */
+.history-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+    .history-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }

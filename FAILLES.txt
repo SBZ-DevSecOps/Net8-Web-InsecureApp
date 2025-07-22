@@ -1,0 +1,186 @@
+﻿## 🛡️ Vulnérabilités intégrées (OWASP Top 10 2021 + extra)
+
+| ID | Type de vulnérabilité | Emplacement | Description |
+|----|------------------------|-------------|-------------|
+| A01 | Broken Access Control | `AdminController.cs` | Accès à une page admin sans vérification de rôle. |
+| A02 | Cryptographic Failures | `User.cs` | Stockage de mot de passe avec MD5. |
+| A03 | Injection SQL (PostgreSQL) | `SqlController.cs` | Requête SQL concaténée, vulnérable à l'injection. |
+| A04 | Insecure Design | `AccountController.cs` | Aucune logique de verrouillage après échec de login. |
+| A05 | Security Misconfiguration | `Startup.cs` | Headers HTTP de sécurité absents (CSP, HSTS, etc.). |
+| A06 | Dépendances vulnérables | `.csproj` | Inclusion de packages NuGet avec des CVEs. |
+| A07 | Authentification défaillante | `AuthController.cs` | Authentification maison sans salage ni hash sécurisé. |
+| A08 | Intégrité logicielle non assurée | `Program.cs` | Chargement dynamique de DLLs non signées. |
+| A09 | Absence de logs de sécurité | `Logger.cs` | Aucun suivi des tentatives échouées de connexion. |
+| A10 | SSRF | `SsrfController.cs` | Requête HTTP côté serveur vers une URL contrôlée par l’utilisateur. |
+| XSS | Cross-Site Scripting | `XssController.cs`, `Index.cshtml` | Affichage direct de paramètres utilisateur non échappés. |
+| CSRF | Cross-Site Request Forgery | `AccountController.cs` | Formulaire sans protection CSRF (`[ValidateAntiForgeryToken]`). |
+| File Inclusion | Path Traversal | `FileController.cs` | Lecture de fichiers avec chemins non filtrés. |
+| Commande | Command Injection | `ToolsController.cs` | Utilisation de `Process.Start` avec saisie utilisateur. |
+| Hardcoded Secrets | Secrets exposés | `appsettings.json` | Connexion à PostgreSQL avec mot de passe codé en dur. |
+
+_______________________________________________________________
+
+
+## 🔟 Vulnérabilités du Top 10 OWASP 2025
+
+| ID    | Vulnérabilité                           | Emplacement              | Description |
+|-------|------------------------------------------|---------------------------|-------------|
+| A01   | Broken Access Control                    | `AdminController.cs`      | Absence de vérification d’autorisation ou de rôle |
+| A02   | Injection                                | `SqlController.cs`        | SQL brut dans requêtes PostgreSQL |
+| A03   | Insecure Design + Logging Failures       | `Logger.cs`, `AuthController.cs` | Pas de journalisation ni de contrôle d’accès par conception |
+| A04   | Identification & Authentication Failures | `AuthController.cs`       | Authentification sans hash sécurisé, pas de MFA |
+| A05   | Cryptographic Failures                   | `CryptoController.cs`     | Utilisation de MD5, stockage en clair |
+| A06   | Security Misconfiguration                | `Startup.cs`, `web.config`| Headers absents, mode debug activé |
+| A07   | Vulnerable & Outdated Components         | `VulnApp.csproj`          | Packages NuGet avec CVEs |
+| A08   | Software & Data Integrity Failures       | `IntegrityController.cs`  | Chargement de DLL non signées |
+| EXT01 | Server-Side Request Forgery (SSRF)       | `SsrfController.cs`       | Requêtes HTTP côté serveur contrôlées par l’utilisateur |
+| EXT02 | Cross-Site Scripting (XSS)               | `XssController.cs`, `Index.cshtml` | Entrée utilisateur injectée dans le DOM |
+| EXT03 | CSRF                                     | `FormsController.cs`      | Aucune protection `ValidateAntiForgeryToken` |
+| EXT04 | Path Traversal                           | `FileController.cs`       | Lecture de fichier via chemin manipulable |
+| EXT05 | Command Injection                        | `ToolsController.cs`      | Exécution de commandes système avec entrée utilisateur |
+| EXT06 | Hardcoded Secrets                        | `appsettings.json`        | Connexion PostgreSQL avec mot de passe en clair |
+
+_______________________________________________________________
+
+/Controllers/
+  ├── AdminController.cs         // A01
+  ├── SqlController.cs           // A02
+  ├── AuthController.cs          // A03, A04
+  ├── CryptoController.cs        // A05
+  ├── ConfigController.cs        // A06
+  ├── IntegrityController.cs     // A08
+  ├── XssController.cs           // EXT02
+  ├── SsrfController.cs          // EXT01
+  ├── FileController.cs          // EXT04
+  └── ToolsController.cs         // EXT05
+
+/Helpers/
+  └── Logger.cs                  // A03
+
+/Views/
+  └── Xss/Index.cshtml           // EXT02
+
+appsettings.json                 // EXT06
+VulnApp.csproj                   // A07
+README.md
+SecurityMatrix.md
+
+_______________________________________________________________
+_______________________________________________________________
+
+Cross-Site Scripting (XSS)
+Sortir du contenu utilisateur dans les vues sans encodage.
+
+@Html.Raw(userInput)
+_______________________________________________________________
+Cross-Site Request Forgery (CSRF)
+Désactiver la validation des tokens anti-forgery.
+
+[IgnoreAntiforgeryToken]
+public IActionResult SubmitForm() { ... }
+
+_______________________________________________________________
+Mauvaise gestion d’authentification et d’autorisation
+- Endpoints accessibles sans restriction.
+- Mauvaise vérification des rôles utilisateurs.
+- Stockage du mot de passe en clair.
+
+_______________________________________________________________
+Sécurité faible des mots de passe
+- Stockage des mots de passe avec MD5 ou SHA1, sans salage.
+
+_______________________________________________________________
+Exposition de données sensibles dans les logs
+- Logs contenant des mots de passe ou jetons.
+
+_______________________________________________________________
+Utilisation de bibliothèques vulnérables (SCA)
+- Ajouter dans le csproj des versions connues vulnérables de packages populaires (ex: Newtonsoft.Json anciennes versions).
+
+_______________________________________________________________
+Path Traversal
+- Permettre de lire des fichiers via un paramètre sans contrôle.
+
+_______________________________________________________________
+Deserialization Insecure  (exemple JSON.Net avec TypeNameHandling.All)
+- Désérialisation d’objets non sécurisée.
+
+_______________________________________________________________
+Paquets vulnérables (SCA)
+
+<PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+<PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="5.2.3" />
+
+_______________________________________________________________
+Command Injection (exécution de commandes système via input)
+
+_______________________________________________________________
+LDAP Injection (si LDAP dans le projet)
+
+_______________________________________________________________
+XPath Injection (dans les requêtes XML)
+
+_______________________________________________________________
+Cross-Site Scripting (XSS)
+
+_______________________________________________________________
+Stored XSS (simuler stockage et re-affichage de contenu non filtré)
+
+_______________________________________________________________
+Cross-Site Request Forgery (CSRF)
+Endpoints POST sans token anti-CSRF + loin
+
+_______________________________________________________________
+Désactivation explicite des protections
+
+_______________________________________________________________
+Server-Side Request Forgery (SSRF)
+Endpoint qui récupère une URL en paramètre et fait requête HTTP sans validation
+
+_______________________________________________________________
+Broken Authentication & Session Management
+Stockage mot de passe en clair, faible hash (MD5)
+
+_______________________________________________________________
+Session non sécurisée (cookie sans flag Secure/HttpOnly/SameSite=Strict)
+
+_______________________________________________________________
+JWT mal configuré (pas de vérification signature)
+
+_______________________________________________________________
+Broken Access Control
+
+- IDOR (Insecure Direct Object Reference)
+- Endpoints admin ouverts sans check rôle
+- Escalade de privilèges volontaire
+
+_______________________________________________________________
+Security Misconfiguration
+- Debug activé en prod
+- Stacktrace exposée dans les erreurs
+- CORS trop permissif (AllowAnyOrigin)
+- Headers de sécurité HTTP absents (Content-Security-Policy, HSTS)
+
+_______________________________________________________________
+Sensitive Data Exposure
+- Clés API, tokens hardcodés dans le code
+- Secrets dans les logs
+- Data cryptée avec algorithmes faibles
+
+_______________________________________________________________
+Using Components with Known Vulnerabilities (SCA)
+Packages vulnérables avec versions obsolètes
+
+_______________________________________________________________
+Insufficient Logging & Monitoring
+- Pas de logs sur accès critiques
+- Logs contenant info sensibles
+_______________________________________________________________
+Rate Limiting Bypass
+Pas de limitation d’accès, brute-force possible
+
+_______________________________________________________________
+
+
+_______________________________________________________________
+

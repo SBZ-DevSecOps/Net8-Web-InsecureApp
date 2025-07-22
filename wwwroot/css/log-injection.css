@@ -1,0 +1,94 @@
+﻿/* log-injection.css - enrichissement visuel pour la faille Log Injection */
+
+/* Bloc de visualisation des logs */
+.log-output {
+    margin-top: 1rem;
+}
+
+    .log-output pre {
+        font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+        background-color: #1e1e1e;
+        color: #dcdcdc;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        max-height: 400px;
+        white-space: pre-wrap;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+/* Mise en évidence des lignes détectées comme injectées */
+.log-injected {
+    background-color: rgba(255, 0, 0, 0.08);
+    border-left: 3px solid #ff4d4d;
+    padding-left: 0.5rem;
+}
+
+/* Coloration ANSI */
+.ansi-red {
+    color: #f55;
+}
+
+.ansi-green {
+    color: #5f5;
+}
+
+.ansi-yellow {
+    color: #ff5;
+}
+
+.ansi-blue {
+    color: #55f;
+}
+
+.ansi-bold {
+    font-weight: bold;
+}
+
+.ansi-reset {
+    all: unset;
+    color: inherit;
+}
+
+/* Carte d’exemples de payloads */
+.card-payloads {
+    margin-top: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+    .card-payloads h6 {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-payloads button {
+        margin: 0.25rem 0.5rem 0.25rem 0;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+    }
+
+/* Résultats détectés */
+ul.log-detections {
+    margin-top: 1rem;
+    padding-left: 1rem;
+    list-style: disc;
+}
+
+    ul.log-detections li {
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+/* Boutons d’action */
+.actions-bar {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}

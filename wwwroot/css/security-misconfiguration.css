@@ -1,0 +1,456 @@
+﻿/* security-misconfiguration.css - Styles spécifiques pour le module Security Misconfiguration */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Animations pour les configurations */
+.highlight-config {
+    animation: configPulse 1s ease-in-out 2;
+}
+
+@keyframes configPulse {
+    0%, 100% {
+        background-color: inherit;
+    }
+
+    50% {
+        background-color: rgba(255, 193, 7, 0.3);
+        transform: scale(1.02);
+    }
+}
+
+.pulse-icon {
+    animation: iconPulse 0.5s ease-in-out 3;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.3);
+        color: #dc3545;
+    }
+}
+
+/* Historique des tests de configuration */
+.history-entry {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+    .history-entry:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .history-entry.misconfigured {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left-color: #dc3545;
+    }
+
+    .history-entry.secure {
+        background-color: rgba(25, 135, 84, 0.1);
+        border-left-color: #198754;
+    }
+
+    .history-entry code {
+        background-color: rgba(0, 0, 0, 0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+        color: #495057;
+    }
+
+    .history-entry .time {
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 0.85em;
+    }
+
+    .history-entry .type {
+        font-weight: bold;
+        color: #212529;
+        text-transform: uppercase;
+        font-size: 0.8em;
+    }
+
+/* Cartes de configuration */
+.card-header {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.card-body .form-check {
+    margin-bottom: 0.75rem;
+}
+
+.form-check-label {
+    cursor: default;
+    user-select: none;
+}
+
+    .form-check-label i {
+        margin-right: 0.5rem;
+        width: 16px;
+        text-align: center;
+    }
+
+.form-check-input:checked:disabled {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    opacity: 0.8;
+}
+
+.form-check-input:not(:checked):disabled {
+    opacity: 0.5;
+}
+
+/* Indicateurs de risque */
+.fa-skull-crossbones {
+    animation: skull-shake 2s infinite;
+}
+
+@keyframes skull-shake {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-5deg);
+    }
+
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+/* Boutons de test spécifiques */
+.test-default-creds,
+.test-xxe,
+.test-cors {
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.default-creds-test {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Alertes de configuration */
+.alert-warning .fa-cog {
+    animation: cogSpin 4s linear infinite;
+}
+
+@keyframes cogSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Code et exemples */
+pre {
+    position: relative;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+    pre::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    pre::-webkit-scrollbar-track {
+        background: #1a202c;
+        border-radius: 4px;
+    }
+
+    pre::-webkit-scrollbar-thumb {
+        background: #4a5568;
+        border-radius: 4px;
+    }
+
+        pre::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+
+/* Badges de risque améliorés */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+    .badge.bg-danger {
+        background-color: #dc3545 !important;
+        box-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
+    }
+
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+    }
+
+/* Configuration problématique */
+.card.border-danger {
+    border-width: 2px;
+    box-shadow: 0 4px 6px rgba(220, 53, 69, 0.1);
+}
+
+    .card.border-danger .card-header {
+        background-color: #dc3545;
+        border-bottom: 2px solid #bd2130;
+    }
+
+    .card.border-danger code {
+        color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.1);
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+
+/* Checklist de configuration */
+.form-check-input:checked ~ .form-check-label {
+    font-weight: 500;
+}
+
+.text-danger i {
+    animation: warningBlink 2s ease-in-out infinite;
+}
+
+@keyframes warningBlink {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+/* Headers de sécurité manquants */
+.missing-headers {
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+    .missing-headers li {
+        color: #721c24;
+        margin-bottom: 5px;
+    }
+
+/* Effets visuels pour les données sensibles */
+.fa-database {
+    color: #dc3545;
+}
+
+.fa-credit-card {
+    color: #ffc107;
+}
+
+.fa-globe {
+    color: #17a2b8;
+}
+
+/* Notifications flottantes */
+.alert.position-fixed {
+    animation: slideIn 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Tableau de bord des vulnérabilités */
+.vulnerability-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+    .vulnerability-dashboard .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+        .vulnerability-dashboard .stat-card h3 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .default-creds-test {
+        flex-direction: column;
+    }
+
+    .history-entry {
+        font-size: 0.8em;
+        padding: 6px 8px;
+    }
+
+        .history-entry code {
+            display: block;
+            margin-top: 4px;
+            word-break: break-all;
+        }
+
+    pre {
+        font-size: 0.75rem;
+        padding: 10px;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .form-check {
+        font-size: 0.9rem;
+    }
+}
+
+/* Amélioration de l'accessibilité */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+
+/* Mode sombre (si supporté) */
+@media (prefers-color-scheme: dark) {
+    .card {
+        background-color: #212529;
+        color: #f8f9fa;
+    }
+
+    .card-header {
+        background-color: #343a40;
+        color: #f8f9fa;
+    }
+
+    .form-control,
+    .form-select {
+        background-color: #343a40;
+        color: #f8f9fa;
+        border-color: #495057;
+    }
+
+    code {
+        color: #f8f9fa;
+    }
+}
+
+/* Indicateurs de test en cours */
+.testing-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #28a745;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+    margin-left: 10px;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Style pour les logs simulés */
+.console-output {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85rem;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+    .console-output .log-warn {
+        color: #dcdcaa;
+    }
+
+    .console-output .log-error {
+        color: #f48771;
+    }
+
+    .console-output .log-info {
+        color: #9cdcfe;
+    }
+
+/* Amélioration finale */
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(13, 202, 240, 0.3);
+    transition: all 0.2s ease;
+}

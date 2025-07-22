@@ -1,0 +1,294 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - InsecureAppWebNet8</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modern-style.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    InsecureApp
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">
+                                Accueil
+                            </a>
+                        </li>
+
+                        <!-- Dropdown Injections -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="injectionsDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                Injections
+                                <span class="badge bg-danger badge-menu">9</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="injectionsDropdown">
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        Base de données
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionSql" asp-action="Index">
+                                        SQL Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionNosql" asp-action="Index">
+                                        NoSQL Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionLdap" asp-action="Index">
+                                        LDAP Injection
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        Code & Templates
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionCommand" asp-action="Index">
+                                        Command Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionTemplate" asp-action="Index">
+                                        Template Injection (SSTI)
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionEl" asp-action="Index">
+                                        Expression Language
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionCrlf" asp-action="Index">
+                                        CRLF Injection
+                                    </a>
+                                </li>
+
+                                <li><hr class="dropdown-divider"></li>
+
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        XML & Formats
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionXxe" asp-action="Index">
+                                        XXE Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionXpath" asp-action="Index">
+                                        XPath Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <h6 class="dropdown-header">
+                                        Autres
+                                    </h6>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionSmtp" asp-action="Index">
+                                        SMTP Injection
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InjectionLog" asp-action="Index">
+                                        Log Injection
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Dropdown XSS (pour le futur) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="xssDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                XSS
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="xssDropdown">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="XssReflected" asp-action="Index">
+                                        Reflected XSS
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="XssStored" asp-action="Index">
+                                        Stored XSS
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="XssDom" asp-action="Index">
+                                        DOM XSS
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Dropdown Authentification (pour le futur) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="authDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">Auth & Session</a>
+                            <ul class="dropdown-menu" aria-labelledby="authDropdown">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Authentication" asp-action="Index">
+                                        Authentication Failures
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="BrokenAccessControl" asp-action="Index">
+                                        Broken Access Control
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="SessionHijacking" asp-action="Index">     
+                                        Session Hijacking
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="CSRF" asp-action="Index">
+                                        CSRF
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Dropdown Autres vulnérabilités (pour le futur) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="othersDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">Autres</a>
+                            <ul class="dropdown-menu" aria-labelledby="othersDropdown">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="DirectoryTraversal" asp-action="Index">
+                                        Directory Traversal
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="FileUpload" asp-action="Index">
+                                        File Upload
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Ssrf" asp-action="Index">
+                                        SSRF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="LoggingMonitoring" asp-action="Index">
+                                        Logging & Monitoring
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="InsecureDesign" asp-action="Index">
+                                        Insecure Design
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="CryptographicFailures" asp-action="Index">
+                                        Secrets et Crypto
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="SecurityMisconfiguration" asp-action="Index">
+                                        Security Misconfiguration
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="VulnerableComponents" asp-action="Index">
+                                        Vulnerable and Outdated Components
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="SoftwareIntegrity" asp-action="Index">
+                                        Software Integrity
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Ressources -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="resourcesDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                Ressources
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="resourcesDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="https://owasp.org/Top10/" target="_blank">
+                                        OWASP Top 10
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="https://cheatsheetseries.owasp.org/" target="_blank">
+                                        OWASP Cheat Sheets
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Home" asp-action="About">
+                                        À propos
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- Partie droite du menu -->
+                    <div class="d-flex align-items-center">
+                        <span class="navbar-text me-3">
+                            <small>Environnement de test uniquement</small>
+                        </span>
+                        <partial name="_LoginPartial" />
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container mt-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    &copy; 2025 - InsecureAppWebNet8 - Application vulnérable pour l'apprentissage
+                </div>
+                <div class="col-md-6 text-end">
+                    <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a> |
+                    <a href="https://github.com" target="_blank">GitHub</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+    @await RenderSectionAsync("Styles", required: false)
+</body>
+</html>

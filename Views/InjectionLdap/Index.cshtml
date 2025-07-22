@@ -1,0 +1,297 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<LdapResult>
+
+@{
+    ViewData["Title"] = "LDAP Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application simule des vulnérabilités LDAP pour des fins éducatives.
+        Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>LDAP Injection - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection LDAP (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionLdap" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>Exemple de payload :</strong><br />
+                            <code id="payloadExampleContent"></code>
+                        </div>
+                        <button type="button" id="useExampleBtn" class="btn btn-sm btn-outline-primary" style="display:none;">
+                            Utiliser
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload à tester</label>
+                    <input type="text" id="payload" name="payload" class="form-control" value="@Model.Payload" placeholder="Entrez votre payload LDAP..." />
+                    <small class="form-text text-muted">
+                        Simule une recherche LDAP d'utilisateur (ex: admin, *, john)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-search"></i> Exécuter la recherche LDAP
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - LDAP Injection</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filtre LDAP exécuté -->
+    @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+    {
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Filtre LDAP exécuté :</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyFilterToClipboard()">
+                    <i class="fas fa-copy"></i> Copier
+                </button>
+            </div>
+            <pre class="bg-dark text-light p-3 border rounded"><code>@Model.ExecutedSql</code></pre>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'exécution</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+            {
+                <p><strong>Filtre LDAP tenté :</strong></p>
+                <div class="bg-light p-2 border rounded">
+                    <code>@Model.ExecutedSql</code>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@Html.Raw(attackInfo.ErrorExplanation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-users"></i> Résultats LDAP (@Model.Results.Count entrées)</h5>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportResults()">
+                    <i class="fas fa-download"></i> Exporter CSV
+                </button>
+            </div>
+
+            @foreach (var result in Model.Results)
+            {
+                <div class="card mt-3">
+                    <div class="card-header bg-dark text-white">
+                        <strong>DN:</strong> @result.Dn
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Attribut</th>
+                                    <th>Valeur</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var attr in result.Attributes.OrderBy(a => a.Key))
+                                {
+                                    <tr>
+                                        <td><strong>@attr.Key</strong></td>
+                                        <td>
+                                            @if (attr.Key.ToLower() == "userpassword")
+                                            {
+                                                <span class="text-danger">
+                                                    <i class="fas fa-lock"></i> @attr.Value
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                @attr.Value
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Analyse des résultats -->
+            @{
+                var hasPasswords = Model.Results.Any(r => r.Attributes.ContainsKey("userPassword"));
+                var hasMultipleResults = Model.Results.Count > 1;
+            }
+
+            @if (hasPasswords || hasMultipleResults)
+            {
+                <div class="alert alert-warning mt-3">
+                    <h6><i class="fas fa-search"></i> Analyse des résultats :</h6>
+                    <ul class="mb-0">
+                        @if (hasPasswords)
+                        {
+                            <li><strong>Mots de passe exposés :</strong> L'injection a permis d'accéder aux hashes de mots de passe, indiquant une vulnérabilité critique.</li>
+                        }
+                        @if (hasMultipleResults)
+                        {
+                            <li><strong>Bypass de filtrage :</strong> L'injection a retourné plusieurs entrées, suggérant un contournement des restrictions de recherche.</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.AttackType) && string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle"></i> Aucune entrée LDAP trouvée.
+            Cela peut indiquer que l'injection a échoué ou que les critères ne correspondent à aucune entrée.
+        </div>
+    }
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Échappement des caractères spéciaux :</strong> Échappez les caractères LDAP spéciaux (*, (, ), \, NUL)</li>
+                    <li><strong>Validation stricte :</strong> Validez et filtrez tous les inputs utilisateur</li>
+                    <li><strong>Requêtes paramétrées :</strong> Utilisez des APIs LDAP sécurisées avec des paramètres</li>
+                    <li><strong>Principe du moindre privilège :</strong> Limitez les permissions du compte de service LDAP</li>
+                    <li><strong>Liste blanche :</strong> Utilisez des listes blanches de caractères autorisés</li>
+                    <li><strong>Monitoring :</strong> Surveillez les requêtes LDAP anormales</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .card-body table {
+            margin-bottom: 0;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .text-danger i {
+            margin-right: 5px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Json.Serialize(Model.AttackInfos)
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.ldapInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<LdapResult>())
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/ldap-injection.js"></script>
+}

@@ -1,0 +1,364 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<AccessControlResult>
+
+@{
+    ViewData["Title"] = "Broken Access Control";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies vulnérabilités de contrôle d'accès détectables par les outils SAST.
+        Le contrôle d'accès défaillant est la vulnérabilité #1 du OWASP Top 10 2021. Ne jamais déployer en production !
+    </div>
+
+    <h2>A01:2021 - Broken Access Control</h2>
+    <p class="text-muted">Vulnérabilités réelles de contrôle d'accès et d'autorisation</p>
+
+    <!-- Contexte utilisateur actuel -->
+    <div class="alert alert-info">
+        <i class="fas fa-user"></i> <strong>Contexte simulé :</strong>
+        Vous êtes connecté en tant que <strong>Alice (ID: 1, Role: user)</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="BrokenAccessControl" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de vulnérabilité</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Endpoint / Payload</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="/GetProfile?userId=2">
+                    <small class="form-text text-muted">
+                        L'endpoint sera automatiquement rempli selon votre sélection
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-unlock-alt"></i> Voir les endpoints vulnérables
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces endpoints vulnérables directement :</p>
+
+                @if (Model.AttackType == "idor")
+                {
+                    <strong>IDOR - Accès aux profils d'autres utilisateurs :</strong>
+            
+                    <br />
+                    <code>GET /BrokenAccessControl/GetProfile?userId=2</code>
+
+                    <br />
+                    <div class="mt-2">
+                        <a href="/BrokenAccessControl/GetProfile?userId=2" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-user-secret"></i> Accéder au profil de Bob (ID: 2)
+                        </a>
+                        <a href="/BrokenAccessControl/GetProfile?userId=3" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-crown"></i> Accéder au profil Admin (ID: 3)
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "missing-auth")
+                {
+                    <strong>Accès admin sans authentification :</strong>
+            
+                    <br />
+                    <code>GET /BrokenAccessControl/AdminDashboard</code>
+
+                    <br />
+                    <div class="mt-2">
+                        <a href="/BrokenAccessControl/AdminDashboard" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-tachometer-alt"></i> Accéder au panneau admin (sans auth!)
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "privilege-escalation")
+                {
+                    <strong>Élévation de privilèges via mass assignment :</strong>
+            
+                    <br />
+                    <code>POST /BrokenAccessControl/UpdateProfile</code>
+
+                    <br />
+                    <pre class="mt-2">{
+          "id": 1,
+          "username": "alice",
+          "email": "alice@example.com",
+          "role": "admin"  // Changer son rôle!
+        }</pre>
+                    <small class="text-muted">Utilisez Postman ou l'inspecteur réseau pour envoyer ce JSON</small>
+                }
+                else if (Model.AttackType == "forced-browsing")
+                {
+                    <strong>Accès aux endpoints cachés :</strong>
+            
+                    <br />
+                    <code>GET /BrokenAccessControl/BackupData</code>
+
+                    <br />
+                    <div class="mt-2">
+                        <a href="/BrokenAccessControl/BackupData" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-database"></i> Accéder aux données de backup
+                        </a>
+                        <a href="/BrokenAccessControl/ExportAllUsers" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-export"></i> Exporter tous les utilisateurs
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "path-traversal")
+                {
+                    <strong>Path traversal pour lire des fichiers :</strong>
+            
+                    <br />
+                    <code>GET /BrokenAccessControl/DownloadFile?path=../../appsettings.json</code>
+
+                    <br />
+                    <div class="mt-2">
+                        <a href="/BrokenAccessControl/DownloadFile?path=../../appsettings.json" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-code"></i> Lire appsettings.json
+                        </a>
+                        <a href="/BrokenAccessControl/DownloadFile?path=../../../Program.cs" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-code"></i> Lire Program.cs
+                        </a>
+                    </div>
+                }
+
+                <div class="mt-3">
+                    <a href="/BrokenAccessControl/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Voir tous les endpoints vulnérables
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Missing Authorization :</strong> Endpoints sans attribut [Authorize]</li>
+                    <li><strong>IDOR :</strong> Accès direct aux objets sans vérification</li>
+                    <li><strong>Mass Assignment :</strong> Binding de tous les champs incluant le rôle</li>
+                    <li><strong>Path Traversal :</strong> Path.Combine() avec entrée utilisateur</li>
+                    <li><strong>No Ownership Check :</strong> Suppression/modification sans vérification</li>
+                    <li><strong>Data Exposure :</strong> Endpoints exposant des données sensibles</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>IDOR sans vérification :</h6>
+                        <pre class="small"><code>public IActionResult GetProfile(int userId)
+{
+    // Pas de vérification!
+    return Json(_users[userId]);
+}</code></pre>
+
+                        <h6>Endpoint sans auth :</h6>
+                        <pre class="small"><code>// Manque [Authorize]
+public IActionResult AdminDashboard()
+{
+    return Json(sensitiveData);
+}</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Mass Assignment :</h6>
+                        <pre class="small"><code>public IActionResult UpdateProfile([FromBody] UserProfile user)
+{
+    // Tous les champs bindés!
+    _users[user.Id] = user;
+}</code></pre>
+
+                        <h6>Path Traversal :</h6>
+                        <pre class="small"><code>var path = Path.Combine(dir, userInput);
+File.ReadAllText(path); // Dangereux!</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Veracode</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Attribut [Authorize] :</strong> Sur tous les endpoints sensibles</li>
+                    <li><strong>Vérification de propriété :</strong> CurrentUser.Id == resource.OwnerId</li>
+                    <li><strong>Principe du moindre privilège :</strong> Limiter les accès au strict nécessaire</li>
+                    <li><strong>Validation des chemins :</strong> Empêcher le path traversal</li>
+                    <li><strong>DTOs spécifiques :</strong> Éviter le mass assignment</li>
+                    <li><strong>Audit logging :</strong> Tracer tous les accès</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ressources disponibles -->
+    <div class="mt-4">
+        <h6><i class="fas fa-database"></i> Données de test disponibles</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Utilisateurs</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li>ID 1: alice (user) - <strong>Vous</strong></li>
+                                <li>ID 2: bob (user) - Autre utilisateur</li>
+                                <li>ID 3: admin (admin) - Administrateur</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Documents</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li>ID 1: Rapport Q1 (Alice, confidentiel)</li>
+                                <li>ID 2: Notes réunion (Bob)</li>
+                                <li>ID 3: Salaires 2024 (Admin, confidentiel)</li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/broken-access-control.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.brokenAccessControlData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/broken-access-control.js"></script>
+}

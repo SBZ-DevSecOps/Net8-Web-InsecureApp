@@ -1,0 +1,92 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>jQuery @ViewBag.JQueryVersion - Vulnérable XSS</title>
+    <!-- VULNÉRABLE : jQuery 2.1.4 avec CVE-2015-9251, CVE-2019-11358 -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .warning {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .output {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        code {
+            background-color: #e9ecef;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test jQuery Vulnérable</h1>
+
+    <div class="warning">
+        <strong>⚠️ ATTENTION :</strong> Cette page utilise jQuery @ViewBag.JQueryVersion qui contient des vulnérabilités XSS connues !
+        <br>CVE-2015-9251, CVE-2019-11358, CVE-2020-11022
+    </div>
+
+    <h2>Entrée utilisateur :</h2>
+    <code>@ViewBag.UserInput</code>
+
+    <h2>Rendu avec jQuery vulnérable :</h2>
+    <div id="output" class="output"></div>
+
+    <h2>Autres tests vulnérables :</h2>
+    <div id="htmlTest" class="output"></div>
+    <div id="appendTest" class="output"></div>
+
+    <script>
+        // VULNÉRABLE : jQuery 2.1.4 $.html() permet XSS
+        $(document).ready(function() {
+            console.log('jQuery version:', $.fn.jquery);
+
+            // VULNÉRABLE : Injection directe via .html()
+            var userContent = '@Html.Raw(ViewBag.UserInput)'; // Intentionnellement vulnérable pour la démo
+            $('#output').html(userContent); // XSS possible!
+
+            // VULNÉRABLE : Autres méthodes jQuery vulnérables
+            $('#htmlTest').html('<div>' + userContent + '</div>'); // XSS!
+            $('#appendTest').append(userContent); // XSS!
+
+            // VULNÉRABLE : Prototype pollution dans jQuery < 3.4.0
+            $.extend(true, {}, JSON.parse('{"__proto__": {"isAdmin": true}}'));
+        });
+    </script>
+
+    <h2>Détails de la vulnérabilité :</h2>
+    <ul>
+        <li><strong>Version jQuery :</strong> <span id="version"></span></li>
+        <li><strong>Méthodes vulnérables :</strong> .html(), .append(), .prepend(), .before(), .after()</li>
+        <li><strong>CVEs :</strong> CVE-2015-9251 (XSS), CVE-2019-11358 (Prototype Pollution)</li>
+        <li><strong>CVSS Score :</strong> 6.1 (Medium)</li>
+    </ul>
+
+    <script>
+        $('#version').text($.fn.jquery);
+    </script>
+
+    <div style="margin-top: 40px;">
+        <a href="/VulnerableComponents">← Retour</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,370 @@
+﻿/* xss-dom.css - Styles spécifiques pour le module XSS DOM-Based */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #d73a49;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Zones de démonstration XSS */
+.xss-demo {
+    background-color: #fff5f5;
+    border: 2px dashed #dc3545 !important;
+    position: relative;
+}
+
+    .xss-demo::before {
+        content: "⚠️ ZONE XSS ACTIVE";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        font-weight: bold;
+        animation: blink 1s infinite;
+    }
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Input dangereux */
+input[type="text"].form-control,
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    background-color: #fff9f9;
+}
+
+    input[type="text"].form-control:focus,
+    textarea.form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        background-color: #fff;
+    }
+
+/* Zone de sortie XSS */
+#xssOutputZone,
+#welcomeMessage,
+#documentWriteOutput,
+#hashDisplay,
+#evalResult,
+#postMessageReceiver {
+    min-height: 60px;
+    border: 2px solid #ffc107;
+    background-color: #fffbf0;
+    padding: 15px;
+    border-radius: 5px;
+    position: relative;
+    overflow: auto;
+}
+
+    #xssOutputZone::after {
+        content: "💀 OUTPUT NON SANITISÉ";
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        font-size: 0.7rem;
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+/* Commentaires vulnérables */
+.comments-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.comment {
+    padding: 10px;
+    margin: 5px 0;
+    background-color: white;
+    border-radius: 5px;
+    border-left: 3px solid #dc3545;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Alert pour injection active */
+.xss-active-alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #dc3545;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    z-index: 9999;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+/* Code examples */
+pre.small {
+    font-size: 0.8rem;
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+    pre.small code {
+        color: #f8f8f2;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+/* Dangerous code highlighting */
+.dangerous-code {
+    background-color: #ffebee;
+    border: 2px solid #f44336;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+    .dangerous-code code {
+        color: #c62828;
+        font-weight: bold;
+    }
+
+/* Hash display */
+#currentUrl {
+    font-family: 'Courier New', monospace;
+    color: #495057;
+    word-break: break-all;
+}
+
+/* Eval result */
+#evalOutput {
+    font-family: 'Courier New', monospace;
+    color: #d73a49;
+    font-weight: bold;
+}
+
+/* Button hover effects */
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Card danger styling */
+.card.border-danger {
+    border-width: 2px;
+    box-shadow: 0 4px 6px rgba(220, 53, 69, 0.1);
+}
+
+    .card.border-danger .card-header {
+        background-color: #dc3545;
+        border-bottom: 2px solid #bd2130;
+    }
+
+/* XSS payload indicator */
+.xss-payload {
+    display: inline-block;
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    border: 1px solid #ef5350;
+}
+
+/* iframe for postMessage */
+#vulnerableFrame {
+    border: 2px dashed #ffc107;
+    background-color: #fffbf0;
+    min-height: 100px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* Dynamic demo area */
+#dynamicDemo .card-body {
+    min-height: 150px;
+    background-image: repeating-linear-gradient( 45deg, #fff5f5, #fff5f5 10px, #ffebee 10px, #ffebee 20px );
+}
+
+/* Comments list */
+#commentsList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+    #commentsList .comment {
+        transition: all 0.3s ease;
+    }
+
+        #commentsList .comment:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+
+/* Injection success indicator */
+.injection-success {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #dc3545;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .xss-demo {
+        padding: 15px !important;
+    }
+
+        .xss-demo::before {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+        }
+
+    pre {
+        font-size: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Tooltips */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+}
+
+/* Final warning */
+.final-warning {
+    background-color: #721c24;
+    color: #f8d7da;
+    padding: 20px;
+    border-radius: 5px;
+    border: 2px solid #f5c6cb;
+    text-align: center;
+    margin-top: 20px;
+}
+
+    .final-warning i {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+/* Code syntax highlighting for vulnerabilities */
+.vulnerability-code {
+    position: relative;
+    margin: 10px 0;
+}
+
+    .vulnerability-code::before {
+        content: "VULNÉRABLE";
+        position: absolute;
+        top: -8px;
+        right: 10px;
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 8px;
+        font-size: 0.7rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Loading spinner */
+.xss-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #dc3545;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

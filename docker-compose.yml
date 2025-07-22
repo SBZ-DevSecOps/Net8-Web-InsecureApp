@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  web:
+    image: myapp:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # VULNÉRABLE: Secrets en dur dans docker-compose
+      - DATABASE_URL=postgresql://postgres:PostgresAdm!n2024@db:5432/production_db
+      - REDIS_URL=redis://:RedisP@ssw0rd123!@redis:6379
+      - JWT_SECRET=jwt_secret_key_minimum_256_bits_for_hs256_algorithm
+      - APP_SECRET=super_secret_app_key_2024
+      - API_KEY=4f8b5c3d-9e2a-4b6f-8d1c-3a7e9f2b5d8c
+      - AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+      - AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      - STRIPE_SECRET_KEY=sk_live_51H0vKmICTx8fBbMHkV5xOvxk8Rku3Zvg5P
+      - ADMIN_PASSWORD=SuperAdm!n2024
+      - ENCRYPTION_KEY=0123456789abcdef0123456789abcdef
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./app:/app
+      # VULNÉRABLE: Monte des fichiers sensibles
+      - ./secrets/private_key.pem:/app/config/private_key.pem
+      - ./secrets/ssl_cert.pem:/app/config/ssl_cert.pem
+
+  db:
+    image: postgres:15
+    environment:
+      # VULNÉRABLE: Credentials base de données
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=PostgresAdm!n2024
+      - POSTGRES_DB=production_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    command: >
+      redis-server
+      --requirepass RedisP@ssw0rd123!
+      --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  elasticsearch:
+    image: elasticsearch:8.5.0
+    environment:
+      # VULNÉRABLE: Credentials Elasticsearch
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=ElasticP@ssw0rd123!
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=true
+      - xpack.security.authc.api_key.enabled=true
+    ports:
+      - "9200:9200"
+
+  mongodb:
+    image: mongo:6
+    environment:
+      # VULNÉRABLE: Credentials MongoDB
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=MongoAdm!n2024
+      - MONGO_INITDB_DATABASE=myapp
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      # VULNÉRABLE: Credentials RabbitMQ
+      - RABBITMQ_DEFAULT_USER=rabbit_user
+      - RABBITMQ_DEFAULT_PASS=RabbitMQP@ss123!
+      - RABBITMQ_DEFAULT_VHOST=myvhost
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      # VULNÉRABLE: Credentials MySQL
+      - MYSQL_ROOT_PASSWORD=MySQLR00tP@ss!
+      - MYSQL_DATABASE=myapp_db
+      - MYSQL_USER=app_user
+      - MYSQL_PASSWORD=AppUserP@ss123!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    environment:
+      # VULNÉRABLE: Basic auth credentials
+      - NGINX_USER=admin
+      - NGINX_PASS=NginxAdm!n2024
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
+  mysql_data:
+
+# VULNÉRABLE: Secrets dans les labels
+networks:
+  default:
+    labels:
+      - "com.example.api_key=4f8b5c3d-9e2a-4b6f-8d1c-3a7e9f2b5d8c"
+      - "com.example.secret=production_secret_2024"

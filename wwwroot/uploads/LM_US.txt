@@ -1,0 +1,32 @@
+Stéphane Belkheraz
+Paris, France
+stephane.belkheraz@hotmail.fr — +33 782 112903
+LinkedIn: https://www.linkedin.com/in/stefbelkheraz/
+
+Paris, the 7th of June 2025
+
+Subject: Application – Fullstack Developer / Software Architect – Specialized in Application Security & Azure
+Remote-first with planned relocation to Latin America
+
+Dear Recruitment Team,
+
+With more than 25 years of experience in backend development, cloud architecture and application security, 
+I am applying for a role as a backend developer/devSecOps or Azure Security architect. 
+I currently live in France and am actively planning to relocate to Latin America. 
+I am available immediately for a fully remote collaboration, with a high level of autonomy and efficiency, while preparing for relocation.
+
+My main focus lies in backend systems (.NET, REST APIs, microservices, performance, scalability), 
+with strong experience designing secure cloud-native solutions on Microsoft Azure (App Services, Security, DevOps). 
+I apply DevSecOps principles from the design stage and have worked with international teams on regulated, business-critical systems.
+
+I am a native French speaker, fluent in Spanish, and have professional proficiency in English, 
+making me highly adaptable in multilingual and multicultural environments.
+
+I’m looking to join a forward-thinking company open to high-level remote profiles, 
+with a clear perspective of long-term relocation to Latin America.
+
+Thank you for your time and consideration. I look forward to hearing from you and would be glad to discuss how I can contribute to your technical success.
+
+Sincerely,
+
+Stéphane Belkheraz

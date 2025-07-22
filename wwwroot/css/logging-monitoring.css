@@ -1,0 +1,451 @@
+﻿/* logging-monitoring.css - Styles spécifiques pour le module Security Logging and Monitoring Failures */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Formulaires de logging */
+.logging-form {
+    background-color: #f8f9fa;
+    border: 2px dashed #dc3545 !important;
+    position: relative;
+}
+
+    .logging-form::before {
+        content: "⚠️ LOGGING DÉFAILLANT";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Input styling */
+input[type="text"].form-control,
+input[type="password"].form-control,
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+}
+
+    input[type="text"].form-control:focus,
+    input[type="password"].form-control:focus,
+    textarea.form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* Textarea pour log injection */
+textarea.font-monospace {
+    font-size: 0.85rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dc3545;
+    white-space: pre;
+}
+
+/* Results display */
+#loggingResults .card {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Event monitor */
+#eventMonitor .card {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        border-color: #ffc107;
+    }
+
+    50% {
+        border-color: #dc3545;
+    }
+}
+
+/* File icon animation */
+.fa-file-alt {
+    animation: fileWrite 3s infinite;
+}
+
+@keyframes fileWrite {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Badge animations */
+.badge.bg-danger {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Log file links */
+a[href*="/logs/"] {
+    color: #dc3545;
+    text-decoration: underline;
+}
+
+    a[href*="/logs/"]:hover {
+        color: #bb2d3b;
+        text-decoration: none;
+    }
+
+/* Code display */
+pre code {
+    display: block;
+    padding: 0;
+    background-color: transparent;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Sensitive data highlight */
+code.text-danger {
+    background-color: #f8d7da;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+/* Button effects */
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Alert animations */
+.alert.position-fixed {
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Logging specific icons */
+.fa-sign-in-alt {
+    color: #6c757d;
+}
+
+.fa-save {
+    color: #dc3545;
+}
+
+.fa-syringe {
+    color: #fd7e14;
+}
+
+.fa-hammer {
+    color: #dc3545;
+}
+
+.fa-trash {
+    color: #dc3545;
+}
+
+.fa-upload {
+    color: #ffc107;
+}
+
+.fa-link-slash {
+    color: #6c757d;
+}
+
+.fa-clock {
+    color: #0dcaf0;
+}
+
+.fa-history {
+    color: #6f42c1;
+}
+
+.fa-fingerprint {
+    color: #198754;
+}
+
+.fa-cog {
+    color: #6c757d;
+}
+
+.fa-folder-open {
+    color: #dc3545;
+}
+
+/* Event monitor table */
+#eventMonitor .table-sm {
+    font-size: 0.875rem;
+}
+
+    #eventMonitor .table-sm td {
+        padding: 0.3rem;
+    }
+
+/* Log tampering actions */
+.tamper-action {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+    .tamper-action.delete {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .tamper-action.modify {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .tamper-action.truncate {
+        background-color: #6c757d;
+        color: white;
+    }
+
+/* Configuration table */
+.table-sm tbody tr td:first-child {
+    font-weight: bold;
+    color: #495057;
+}
+
+/* Log injection example */
+pre.bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
+
+/* Failed attempts counter */
+.failed-attempts {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+/* Code examples */
+pre.small {
+    font-size: 0.8rem;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+    pre.small code {
+        color: #495057;
+    }
+
+/* Tool badges */
+.badge.bg-danger,
+.badge.bg-warning,
+.badge.bg-info,
+.badge.bg-success,
+.badge.bg-secondary {
+    margin-right: 5px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .logging-form {
+        padding: 15px !important;
+    }
+
+        .logging-form::before {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+        }
+
+    pre {
+        font-size: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    textarea {
+        font-size: 0.8rem;
+    }
+
+    #eventMonitor .table-sm {
+        font-size: 0.75rem;
+    }
+}
+
+/* Missing logs indicator */
+.missing-logs {
+    border: 2px dashed #dc3545;
+    background-color: #f8d7da;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin: 20px 0;
+}
+
+    .missing-logs i {
+        font-size: 3rem;
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+
+/* Tooltips enhancement */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+}
+
+/* Loading indicator */
+.loading-logs {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #dc3545;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Final touches */
+.text-muted small {
+    font-style: italic;
+}
+
+.fa-shield-alt {
+    color: #007bff;
+}
+
+.fa-exclamation-circle {
+    color: #ffc107;
+}
+
+/* Log entry highlight */
+.log-entry {
+    background-color: #f8f9fa;
+    padding: 8px;
+    margin: 4px 0;
+    border-left: 4px solid #dc3545;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+    .log-entry.injected {
+        background-color: #f8d7da;
+        border-left-color: #721c24;
+    }
+
+/* Detection delay indicator */
+.detection-delay {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    animation: delayPulse 2s infinite;
+}
+
+@keyframes delayPulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}

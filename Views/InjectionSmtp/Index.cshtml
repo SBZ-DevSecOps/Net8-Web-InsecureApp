@@ -1,0 +1,350 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<SmtpInjectionResult>
+
+@{
+    ViewData["Title"] = "Email/SMTP Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application contient de vraies vulnérabilités d'injection SMTP/Email détectables par les outils SAST.
+        Ne jamais déployer ce code en production !
+    </div>
+
+    <h2>Email/SMTP Injection - Vulnérabilités réelles</h2>
+    <p class="text-muted">Vulnérabilités SMTP exploitables et détectables par les scanners de sécurité (A03:2021 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionSmtp" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de vulnérabilité</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.Replace("-", " ").ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple de payload :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload à tester</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="email@example.com%0ACc: attacker@evil.com">
+                    <small class="form-text text-muted">
+                        Utilisez %0A, \n ou \r\n pour injecter des nouvelles lignes
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-envelope-open-text"></i> Voir les endpoints vulnérables
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.Replace("-", " ").ToUpper()</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        var result = Model.Results.First();
+
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Pour tester les vulnérabilités SMTP réelles, utilisez ces endpoints :</p>
+
+                @if (Model.AttackType == "header-injection")
+                {
+                    <strong>Test d'injection d'en-têtes :</strong>
+            
+                    <br />
+                    <code>POST /InjectionSmtp/SendEmail</code>
+
+                    <br />
+                    <pre class="mt-2">to: victim@example.com%0ABcc: attacker@evil.com
+        subject: Test
+        body: Message</pre>
+                    <form action="/InjectionSmtp/SendEmail" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="to" value="victim@example.com%0ABcc: attacker@evil.com" />
+                        <input type="hidden" name="subject" value="Test" />
+                        <input type="hidden" name="body" value="Message de test" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-bug"></i> Tester l'injection d'en-têtes
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "command-injection")
+                {
+                    <strong>Test d'injection de commandes :</strong>
+            
+                    <br />
+                    <code>POST /InjectionSmtp/SendViaSendmail</code>
+
+                    <br />
+                    <pre class="mt-2">email: test@example.com; cat /etc/passwd
+        message: Test</pre>
+                    <form action="/InjectionSmtp/SendViaSendmail" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="email" value="test@example.com; cat /etc/passwd" />
+                        <input type="hidden" name="message" value="Test message" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-terminal"></i> Tester l'injection de commande
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "template-injection")
+                {
+                    <strong>Test d'injection de template :</strong>
+            
+                    <br />
+                    <code>POST /InjectionSmtp/SendTemplatedEmail</code>
+
+                    <br />
+                    <pre class="mt-2">to: user@example.com
+        templateBody: Bonjour {{username}}, résultat: {{7*7}}</pre>
+                    <form action="/InjectionSmtp/SendTemplatedEmail" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="to" value="user@example.com" />
+                        <input type="hidden" name="templateBody" value="Bonjour {{username}}, résultat: {{7*7}}" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-code"></i> Tester l'injection de template
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "log-injection")
+                {
+                    <strong>Test d'injection dans les logs :</strong>
+            
+                    <br />
+                    <code>POST /InjectionSmtp/SendEmail</code>
+
+                    <br />
+                    <pre class="mt-2">to: test@example.com%0A[ADMIN] Privilèges élevés accordés</pre>
+                }
+                else if (Model.AttackType == "open-relay")
+                {
+                    <strong>Test de relais ouvert :</strong>
+            
+                    <br />
+                    <code>POST /InjectionSmtp/RelayEmail</code>
+
+                    <br />
+                    <form action="/InjectionSmtp/RelayEmail" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="from" value="spammer@evil.com" />
+                        <input type="hidden" name="to" value="victim@anywhere.com" />
+                        <input type="hidden" name="server" value="smtp.gmail.com" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-share"></i> Tester le relais ouvert
+                        </button>
+                    </form>
+                }
+
+                <div class="mt-3">
+                    <a href="/InjectionSmtp/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Voir tous les endpoints vulnérables
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Header Injection :</strong> Construction d'email sans validation</li>
+                    <li><strong>Command Injection :</strong> Process.Start avec paramètres utilisateur</li>
+                    <li><strong>Template Injection :</strong> Évaluation de templates dynamiques</li>
+                    <li><strong>Hardcoded Secrets :</strong> SMTP_PASSWORD en constante</li>
+                    <li><strong>Log Injection :</strong> Logs sans échappement</li>
+                    <li><strong>Weak Validation :</strong> Regex email trop permissive</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Exemples de payloads -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Vulnérabilités SMTP détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Construction d'email vulnérable :</h6>
+                        <pre class="small"><code>mailMessage.To.Add(userInput); // Sans validation
+mailMessage.Headers.Add("X-User", input);</code></pre>
+
+                        <h6>Command Injection :</h6>
+                        <pre class="small"><code>Process.Start("/usr/sbin/sendmail", email);</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Secrets hardcodés :</h6>
+                        <pre class="small"><code>const string SMTP_PASSWORD = "P@ssw0rd123!";</code></pre>
+
+                        <h6>Log Injection :</h6>
+                        <pre class="small"><code>File.AppendAllText("log", $"Email: {input}");</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Veracode</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (à ne PAS implémenter ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces solutions ne sont PAS implémentées dans ce module pour permettre la détection par les SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Validation stricte :</strong> Valider toutes les adresses email avec des regex stricts</li>
+                    <li><strong>Filtrage des caractères :</strong> Supprimer ou encoder \r\n et autres caractères de contrôle</li>
+                    <li><strong>APIs sécurisées :</strong> Utiliser MailKit au lieu de SmtpClient</li>
+                    <li><strong>Pas de secrets hardcodés :</strong> Utiliser des variables d'environnement</li>
+                    <li><strong>Logs sécurisés :</strong> Échapper les entrées dans les logs</li>
+                    <li><strong>Validation côté serveur :</strong> Ne jamais faire confiance aux entrées utilisateur</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoints disponibles -->
+    <div class="mt-4">
+        <h6><i class="fas fa-server"></i> Endpoints vulnérables disponibles</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Injection d'en-têtes</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li><code>POST /InjectionSmtp/SendEmail</code></li>
+                                <li><code>POST /InjectionSmtp/SendRawEmail</code></li>
+                                <li><code>POST /InjectionSmtp/ValidateAndSend</code></li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Autres vulnérabilités</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li><code>POST /InjectionSmtp/SendViaSendmail</code></li>
+                                <li><code>POST /InjectionSmtp/SendTemplatedEmail</code></li>
+                                <li><code>POST /InjectionSmtp/RelayEmail</code></li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/smtp-injection.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.smtpInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/smtp-injection.js"></script>
+}

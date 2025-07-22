@@ -1,0 +1,366 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<XxeResult>
+
+@{
+    ViewData["Title"] = "XML External Entity (XXE) Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application simule des vulnérabilités XXE extrêmement dangereuses.
+        XXE peut permettre la lecture de fichiers système, SSRF, et DoS. Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>XML External Entity (XXE) - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection XXE via des entités XML externes (A05 - Security Misconfiguration)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionXxe" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            var payloadExample = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.PayloadExample ?? "");
+                            var riskLevel = System.Web.HttpUtility.HtmlAttributeEncode(attackInfo.Value.RiskLevel ?? "");
+
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@payloadExample"
+                                    data-risk-level="@riskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple de payload :</strong><br />
+                    <pre class="mb-0 mt-2" id="payloadExampleContent"></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload XML à tester</label>
+                    <textarea id="payload" name="payload" class="form-control font-monospace"
+                              rows="6" placeholder="Entrez votre payload XML avec DTD...">@Model.Payload</textarea>
+                    <small class="form-text text-muted">
+                        Entrez un document XML avec une DTD contenant des entités externes
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-bug"></i> Parser le XML (XXE activé)
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - XXE Attack</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur de traitement XML</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@attackInfo.ErrorExplanation</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        var result = Model.Results.First();
+
+        <div class="mt-4">
+            <h5><i class="fas fa-file-code"></i> Résultats du parsing XXE</h5>
+
+            <!-- XML d'entrée -->
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <strong>XML d'entrée :</strong>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0">@result.InputXml</pre>
+                </div>
+            </div>
+
+            <!-- Ressources externes accédées -->
+            @if (result.ExternalResourcesAccessed?.Any() == true)
+            {
+                <div class="card mt-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <strong><i class="fas fa-network-wired"></i> Ressources externes accédées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var resource in result.ExternalResourcesAccessed)
+                            {
+                                <li>
+                                    @if (resource.StartsWith("file://"))
+                                    {
+                                        <span class="text-danger">
+                                            <i class="fas fa-file"></i> @resource
+                                        </span>
+                                    }
+                                    else if (resource.StartsWith("http://") || resource.StartsWith("https://"))
+                                    {
+                                        <span class="text-warning">
+                                            <i class="fas fa-globe"></i> @resource
+                                        </span>
+                                    }
+                                    else if (resource.StartsWith("php://"))
+                                    {
+                                        <span class="text-danger">
+                                            <i class="fas fa-code"></i> @resource
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @resource
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Entités résolues -->
+            @if (result.ResolvedEntities?.Any() == true)
+            {
+                <div class="card mt-3 border-warning">
+                    <div class="card-header bg-warning">
+                        <strong><i class="fas fa-key"></i> Entités XML résolues :</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th class="entity-name">Entité</th>
+                                    <th>Valeur résolue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entity in result.ResolvedEntities)
+                                {
+                                    <tr>
+                                        <td><code>&amp;@entity.Key;</code></td>
+                                        <td>
+                                            @if (entity.Value.Contains("root:") || entity.Value.Contains("daemon:"))
+                                            {
+                                                <pre class="mb-0 p-2 bg-dark text-light">@entity.Value</pre>
+                                            }
+                                            else if (entity.Value.Length > 100)
+                                            {
+                                                <pre class="mb-0 p-2 bg-light">@(entity.Value.Substring(0, 100))... (tronqué)</pre>
+                                            }
+                                            else
+                                            {
+                                                <pre class="mb-0 p-2 bg-light">@entity.Value</pre>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- XML traité -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <strong>XML après traitement :</strong>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0">@result.ProcessedXml</pre>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="alert alert-secondary mt-3">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <strong>Temps de traitement</strong><br />
+                        <span class="h5">@result.ProcessingTime.ToString("F2") ms</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Ressources externes</strong><br />
+                        <span class="h5">@(result.ExternalResourcesAccessed?.Count ?? 0)</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Entités résolues</strong><br />
+                        <span class="h5">@(result.ResolvedEntities?.Count ?? 0)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analyse des risques -->
+            @{
+                var hasFileAccess = result.ExternalResourcesAccessed?.Any(r => r.StartsWith("file://")) ?? false;
+                var hasHttpAccess = result.ExternalResourcesAccessed?.Any(r => r.StartsWith("http://") || r.StartsWith("https://")) ?? false;
+                var hasSensitiveData = result.ResolvedEntities?.Any(e =>
+                e.Value.Contains("root:") || e.Value.Contains("password") ||
+                e.Value.Contains("api") || e.Value.Contains("secret")) ?? false;
+            }
+
+            @if (hasFileAccess || hasHttpAccess || hasSensitiveData)
+            {
+                <div class="alert alert-danger mt-3">
+                    <h6><i class="fas fa-shield-alt"></i> Analyse de sécurité :</h6>
+                    <ul class="mb-0">
+                        @if (hasFileAccess)
+                        {
+                            <li><strong>Accès aux fichiers système détecté !</strong> L'attaquant peut lire des fichiers sensibles du serveur.</li>
+                        }
+                        @if (hasHttpAccess)
+                        {
+                            <li><strong>SSRF potentiel détecté !</strong> L'attaquant peut effectuer des requêtes HTTP depuis le serveur.</li>
+                        }
+                        @if (hasSensitiveData)
+                        {
+                            <li><strong>Données sensibles exposées !</strong> Des informations confidentielles ont été extraites.</li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Exemples de payloads XXE -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Exemples de payloads XXE</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Lecture de fichier local :</h6>
+                        <pre class="small">&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;data&gt;&amp;xxe;&lt;/data&gt;</pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>SSRF via XXE :</h6>
+                        <pre class="small">&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "http://internal:8080"&gt;
+]&gt;
+&lt;data&gt;&amp;xxe;&lt;/data&gt;</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention XXE</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Désactiver les entités externes :</strong> Configurer <code>DtdProcessing = DtdProcessing.Prohibit</code></li>
+                    <li><strong>Désactiver la résolution DTD :</strong> Définir <code>XmlResolver = null</code></li>
+                    <li><strong>Utiliser des parseurs sécurisés :</strong> Préférer JSON ou des parseurs XML sécurisés par défaut</li>
+                    <li><strong>Validation stricte :</strong> Valider le XML contre un schéma XSD</li>
+                    <li><strong>Principe du moindre privilège :</strong> Limiter les accès fichiers du processus</li>
+                    <li><strong>WAF :</strong> Utiliser un Web Application Firewall pour détecter les payloads XXE</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light history-container">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xxe-injection.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos))
+    </script>
+
+    <script>
+        window.xxeInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<XxeResult>())
+        };
+    </script>
+
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/xxe-injection.js"></script>
+}

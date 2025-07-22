@@ -1,0 +1,521 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<LoggingMonitoringResult>
+
+@{
+    ViewData["Title"] = "Security Logging and Monitoring Failures";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient de vraies défaillances de logging et monitoring détectables par les outils SAST.
+        Absence de logs, données sensibles exposées, et détection tardive !
+    </div>
+
+    <h2>A09:2021 - Security Logging and Monitoring Failures</h2>
+    <p class="text-muted">Défaillances dans la journalisation et la surveillance des événements de sécurité</p>
+
+    <!-- État du logging -->
+    <div class="alert alert-warning">
+        <i class="fas fa-file-alt"></i> <strong>État du logging :</strong>
+        Logs : <strong>INSUFFISANTS</strong> | Alertes : <strong>DÉSACTIVÉES</strong> |
+        Monitoring : <strong>ABSENT</strong> | Intégrité : <strong>NON PROTÉGÉE</strong>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="LoggingMonitoring" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de défaillance Logging</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload / Input</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="Username, log entry, etc.">
+                    <small class="form-text text-muted">
+                        Le payload sera adapté selon le type de défaillance
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-file-alt"></i> Analyser la défaillance
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces défaillances de logging et monitoring directement :</p>
+
+                @if (Model.AttackType == "no-logging")
+                {
+                    <strong>Absence de logging :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="noLoggingForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="loginUsername" 
+                                           value="admin" placeholder="Username">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="password" class="form-control" id="loginPassword" 
+                                           value="wrongpass" placeholder="Password">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-sign-in-alt"></i> Tenter login (non loggé)
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="attemptMultipleLogins()">
+                                    <i class="fas fa-redo"></i> 10 tentatives
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "sensitive-data-logging")
+                {
+                    <strong>Logging de données sensibles :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="sensitiveDataForm">
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="sensitiveUsername" 
+                                       value="user123" placeholder="Username">
+                            </div>
+                            <div class="mb-2">
+                                <input type="password" class="form-control" id="sensitivePassword" 
+                                       value="P@ssw0rd123!" placeholder="Password">
+                            </div>
+                            <div class="mb-2">
+                                <input type="text" class="form-control" id="creditCard" 
+                                       value="4111-1111-1111-1111" placeholder="Credit Card">
+                                <small class="text-danger">Ces données seront loggées en clair!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-save"></i> Logger données sensibles
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "log-injection")
+                {
+                    <strong>Log Injection :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="logInjectionForm">
+                            <div class="mb-3">
+                                <label class="form-label">Input utilisateur (avec injection) :</label>
+                                <textarea class="form-control font-monospace" id="userInput" rows="3">admin
+[INFO] Login successful for admin
+[INFO] Admin privileges granted
+[INFO] All security checks bypassed</textarea>
+                                <small class="text-danger">Les retours à la ligne créent de fausses entrées!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-syringe"></i> Injecter dans les logs
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "no-alerting")
+                {
+                    <strong>Absence d'alertes :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="bruteForceForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control" id="bruteUsername" 
+                                           value="admin" placeholder="Username cible">
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="number" class="form-control" id="attempts" 
+                                           value="1000" placeholder="Nombre de tentatives">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-hammer"></i> Simuler brute force
+                                </button>
+                                <small class="text-muted">Aucune alerte ne sera déclenchée!</small>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "log-tampering")
+                {
+                    <strong>Modification/Suppression de logs :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="tamperForm">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <select class="form-control" id="tamperAction">
+                                        <option value="delete">Supprimer</option>
+                                        <option value="modify">Modifier</option>
+                                        <option value="truncate">Vider</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-5">
+                                    <select class="form-control" id="logFile">
+                                        <option value="security.log">security.log</option>
+                                        <option value="application.log">application.log</option>
+                                        <option value="errors.log">errors.log</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="submit" class="btn btn-danger w-100">
+                                        <i class="fas fa-trash"></i> Exécuter
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "unencrypted-logs")
+                {
+                    <strong>Transmission non chiffrée :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="transmitForm">
+                            <div class="mb-3">
+                                <label class="form-label">Serveur de logs :</label>
+                                <input type="text" class="form-control" id="logServer" 
+                                       value="http://log-collector.insecure.com/logs" 
+                                       placeholder="http://server/endpoint">
+                                <small class="text-danger">HTTP = pas de chiffrement!</small>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-upload"></i> Transmettre logs
+                            </button>
+                        </form>
+                    </div>
+                }
+                else if (Model.AttackType == "no-correlation")
+                {
+                    <strong>Pas de corrélation d'événements :</strong>
+                    <br />
+                    <div class="alert alert-secondary mt-2">
+                        <p>Les événements sont loggés isolément sans détection de patterns :</p>
+                        <ul>
+                            <li>Port scan → Exploitation → Pas de lien détecté</li>
+                            <li>Multiple failed logins → Pas d'alerte globale</li>
+                            <li>Data exfiltration progressive → Non identifiée</li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-danger" onclick="simulateAttackChain()">
+                        <i class="fas fa-link-slash"></i> Simuler chaîne d'attaque
+                    </button>
+                }
+                else if (Model.AttackType == "delayed-detection")
+                {
+                    <strong>Détection tardive :</strong>
+                    <br />
+                    <button class="btn btn-danger" onclick="checkDetectionDelay()">
+                        <i class="fas fa-clock"></i> Vérifier délai de détection
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="createOldEvents()">
+                        <i class="fas fa-history"></i> Créer événements anciens
+                    </button>
+                }
+                else if (Model.AttackType == "no-integrity")
+                {
+                    <strong>Pas de protection d'intégrité :</strong>
+                    <br />
+                    <div class="logging-form mt-3 p-3 border rounded">
+                        <form id="integrityForm">
+                            <div class="mb-3">
+                                <select class="form-control" id="integrityLogFile">
+                                    <option value="security.log">security.log</option>
+                                    <option value="application.log">application.log</option>
+                                    <option value="sensitive.log">sensitive.log</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-fingerprint"></i> Vérifier intégrité
+                            </button>
+                            <small class="text-muted">Aucun hash/signature stocké!</small>
+                        </form>
+                    </div>
+                }
+
+                <div class="mt-3">
+                    <a href="/LoggingMonitoring/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Tous les endpoints
+                    </a>
+                    <button class="btn btn-warning btn-sm" onclick="viewLoggingConfig()">
+                        <i class="fas fa-cog"></i> Config logging
+                    </button>
+                    <a href="/logs/" target="_blank" class="btn btn-danger btn-sm">
+                        <i class="fas fa-folder-open"></i> Voir les logs
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Absence de logging</strong> - Événements critiques non loggés</li>
+                    <li><strong>Console.WriteLine(password)</strong> - Données sensibles en clair</li>
+                    <li><strong>String concatenation</strong> - Log injection possible</li>
+                    <li><strong>File.Delete(logFile)</strong> - Logs supprimables</li>
+                    <li><strong>HTTP transmission</strong> - Logs non chiffrés</li>
+                    <li><strong>No event correlation</strong> - Attaques non détectées</li>
+                    <li><strong>No hash/signature</strong> - Intégrité non vérifiée</li>
+                    <li><strong>Insufficient log level</strong> - Manque de détails</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Zone de résultats -->
+    <div class="mt-4" id="loggingResults" style="display:none;">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-file-alt"></i> Résultat Logging/Monitoring</h6>
+            </div>
+            <div class="card-body">
+                <div id="loggingResultContent">
+                    <!-- Rempli dynamiquement -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monitor d'événements -->
+    <div class="mt-4" id="eventMonitor" style="display:none;">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-exclamation-triangle"></i> Security Event Monitor</h6>
+            </div>
+            <div class="card-body">
+                <div id="eventList">
+                    <!-- Liste des événements -->
+                </div>
+                <div class="mt-2">
+                    <span class="badge bg-danger" id="unreviewedCount">0</span> événements non revus
+                    <span class="badge bg-warning" id="alertCount">0</span> alertes manquées
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Pas de logging :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Login non loggé
+if (password != correctPassword) {
+    return Unauthorized(); // Pas de log!
+}
+
+// VULNÉRABLE - Exception avalée
+try { ... }
+catch (Exception) { } // Silence!</code></pre>
+
+                        <h6>Données sensibles :</h6>
+                        <pre class="small"><code>// VULNÉRABLE
+logger.LogInformation($"Login: {username}, 
+    Password: {password}");
+File.AppendAllText("log.txt", creditCard);</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Log injection :</h6>
+                        <pre class="small"><code>// VULNÉRABLE - Pas d'échappement
+log.Write($"User action: {userInput}");
+// userInput = "admin\n[INFO] Hack!"</code></pre>
+
+                        <h6>Logs modifiables :</h6>
+                        <pre class="small"><code>// VULNÉRABLE
+File.Delete(logFile);
+File.WriteAllText(logFile, "");
+// Preuves effacées!</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Semgrep</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Défaillances critiques -->
+    <div class="mt-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6><i class="fas fa-exclamation-circle"></i> Défaillances critiques de logging</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Événements non loggés :</h6>
+                        <ul class="small">
+                            <li>Échecs d'authentification</li>
+                            <li>Changements de privilèges</li>
+                            <li>Accès aux données sensibles</li>
+                            <li>Modifications de config</li>
+                            <li>Erreurs de sécurité</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Informations manquantes :</h6>
+                        <ul class="small">
+                            <li>Timestamp précis</li>
+                            <li>IP source</li>
+                            <li>User agent</li>
+                            <li>Session ID</li>
+                            <li>Action tentée</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Problèmes d'intégrité :</h6>
+                        <ul class="small">
+                            <li>Logs en texte clair</li>
+                            <li>Pas de signature</li>
+                            <li>Modification possible</li>
+                            <li>Suppression facile</li>
+                            <li>Pas de backup</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Logger tous les événements de sécurité</strong> : Auth, authz, validation</li>
+                    <li><strong>Format structuré</strong> : JSON avec tous les champs requis</li>
+                    <li><strong>Pas de données sensibles</strong> : Masquer/hasher les PII</li>
+                    <li><strong>Protection anti-injection</strong> : Échapper les entrées utilisateur</li>
+                    <li><strong>Intégrité des logs</strong> : Hash chain, signature, immuabilité</li>
+                    <li><strong>Transmission chiffrée</strong> : TLS pour l'envoi au SIEM</li>
+                    <li><strong>Alertes temps réel</strong> : Seuils et corrélation</li>
+                    <li><strong>Rétention appropriée</strong> : Selon compliance (RGPD, etc)</li>
+                    <li><strong>Monitoring continu</strong> : SOC 24/7</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/logging-monitoring.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.loggingData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/logging-monitoring.js"></script>
+}

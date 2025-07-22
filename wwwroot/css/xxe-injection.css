@@ -1,0 +1,268 @@
+﻿/* xxe-injection.css - Styles spécifiques pour le module XXE Injection */
+
+/* Styles généraux pour les pre et code */
+pre {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    overflow-x: auto;
+}
+
+    pre.bg-dark {
+        background-color: #343a40 !important;
+        border-color: #343a40;
+    }
+
+        pre.bg-dark code {
+            color: #fff !important;
+        }
+
+    pre.bg-light {
+        background-color: #f8f9fa !important;
+    }
+
+.card pre {
+    margin-bottom: 0;
+}
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        font-size: 0.85em;
+        background-color: #e9ecef;
+        color: #212529;
+    }
+
+#payloadExampleContent {
+    color: #212529;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+/* Textarea pour les payloads XML */
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+textarea#payload {
+    min-height: 150px;
+    resize: vertical;
+}
+
+    textarea#payload:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* Tables */
+.table td {
+    vertical-align: top;
+}
+
+.table .entity-name {
+    width: 20%;
+}
+
+.table code {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 2px 4px;
+    border-radius: 3px;
+    color: #d73502;
+}
+
+/* Cards améliorées */
+.card {
+    transition: all 0.3s ease;
+}
+
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+.card-header {
+    font-weight: 600;
+}
+
+.card.border-danger:hover {
+    border-color: #dc3545 !important;
+    border-width: 2px;
+}
+
+.card.border-warning:hover {
+    border-color: #ffc107 !important;
+    border-width: 2px;
+}
+
+/* Icônes et badges */
+.fa-file {
+    color: #dc3545;
+}
+
+.fa-globe {
+    color: #ffc107;
+}
+
+.fa-code {
+    color: #dc3545;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Historique des tests */
+.history-container {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+    .history-container::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .history-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .history-container::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+        .history-container::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Statistiques */
+.alert-secondary .row {
+    margin: 0;
+}
+
+.alert-secondary .col-md-4 {
+    padding: 10px;
+    border-right: 1px solid #dee2e6;
+}
+
+    .alert-secondary .col-md-4:last-child {
+        border-right: none;
+    }
+
+.alert-secondary .h5 {
+    color: #dc3545;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+/* Amélioration des résultats */
+.text-danger {
+    font-weight: 500;
+}
+
+.text-warning {
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    pre {
+        font-size: 0.8rem;
+    }
+
+    .table {
+        font-size: 0.85rem;
+    }
+
+    .alert-secondary .col-md-4 {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+        .alert-secondary .col-md-4:last-child {
+            border-bottom: none;
+        }
+}
+
+/* Amélioration visuelle des listes */
+ul li {
+    margin-bottom: 0.5rem;
+}
+
+    ul li:last-child {
+        margin-bottom: 0;
+    }
+
+/* Style pour les exemples de payloads */
+.card-body pre.small {
+    font-size: 0.8rem;
+    background-color: #2d3748;
+    color: #e2e8f0;
+    padding: 1rem;
+    border: none;
+}
+
+/* Style pour les alertes d'analyse */
+.alert-danger h6 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.alert-danger ul {
+    padding-left: 1.5rem;
+}
+
+/* Amélioration des pre dans les cards */
+.card-body pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+    .card-body pre::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .card-body pre::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .card-body pre::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 3px;
+    }
+
+/* Style pour les codes inline */
+code:not(pre code) {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    color: #e83e8c;
+}

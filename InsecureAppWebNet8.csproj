@@ -1,0 +1,85 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>aspnet-InsecureAppWebNet8-bbec50c2-4e9b-47a9-8036-2264e0cec91d</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="FAILLES.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="HtmlSanitizer" Version="9.0.886" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.17" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.17" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.17">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+	<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
+    <PackageReference Include="Serilog" Version="4.3.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="System.DirectoryServices" Version="9.0.6" />
+    <PackageReference Include="System.DirectoryServices.Protocols" Version="9.0.6" />
+	<PackageReference Include="System.Text.Json" Version="9.0.6" />
+
+	  <!-- Composants vulnérables pour la démonstration OWASP A06 -->
+	  <!-- A exporter dans un autre projet -->
+
+	  <!-- Newtonsoft.Json 9.0.1 - CVE-2018-1000210 (RCE via TypeNameHandling.All) --><!--
+	  <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+
+	  --><!-- log4net 2.0.8 - CVE-2018-1285 (XXE) -->
+	  <PackageReference Include="log4net" Version="2.0.8" />
+
+	  <!-- System.Data.SqlClient 4.4.0 - Multiples vulnérabilités -->
+	  <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+
+	  <!-- jQuery et Bootstrap via LibMan ou wwwroot --><!--
+	  --><!-- Alternativement, vous pouvez utiliser : -->
+	   <PackageReference Include="jQuery" Version="2.1.4" /> 
+	   <PackageReference Include="Bootstrap" Version="3.3.7" /> 
+
+	  <!-- Autres packages vulnérables optionnels -->
+	  <PackageReference Include="System.Net.Http" Version="4.3.0" />
+	  <PackageReference Include="System.Text.RegularExpressions" Version="4.3.0" />
+	  
+	  
+	  
+	  
+
+	  <!-- Newtonsoft.Json v10.0.1 – CVE-2021-41107, CVE-2022-23564 -->
+	  <!-- <PackageReference Include="Newtonsoft.Json" Version="10.0.1" />  -->
+
+	  <!-- System.Text.Json v6.0.0 – avant patchs CVE-2023-35945 -->
+	  <!-- <PackageReference Include="System.Text.Json" Version="6.0.0" /> -->
+
+	  <!-- Npgsql v4.0.0 – vulnérable à certaines attaques si mal utilisé -->
+	  <!-- <PackageReference Include="Npgsql" Version="4.0.0" /> -->
+
+	  <!-- Microsoft.AspNetCore.App v6.0.0 – Fin de support en novembre 2024 -->
+	  <!-- <FrameworkReference Include="Microsoft.AspNetCore.App" /> -->
+
+	  <!-- RestSharp v106.6.10 – ancienne version avec failles d'injection dans certaines versions -->
+	  <PackageReference Include="RestSharp" Version="106.6.10" />
+
+	  <!-- System.Text.Encodings.Web v4.5.0 – avant corrections XSS -->
+	  <!-- <PackageReference Include="System.Text.Encodings.Web" Version="4.5.0" /> -->
+
+	  <!-- Microsoft.Data.SqlClient v1.0.0 – CVE-2022-41064 et instabilités TLS -->
+	  <!-- <PackageReference Include="Microsoft.Data.SqlClient" Version="1.0.0" /> -->
+
+	  <!-- Microsoft.AspNet.WebApi.Core – bibliothèque WebAPI héritée -->
+	  <!-- <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.3" /> -->
+  </ItemGroup>
+
+</Project>

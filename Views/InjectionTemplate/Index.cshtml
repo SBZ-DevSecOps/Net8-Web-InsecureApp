@@ -1,0 +1,378 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<TemplateResult>
+
+@{
+    ViewData["Title"] = "Server-Side Template Injection (SSTI)";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER EXTRÊME :</strong> Ce module contient de vraies vulnérabilités SSTI permettant l'exécution de code arbitraire (RCE).
+        Ces vulnérabilités sont détectables par les outils SAST. Ne jamais déployer en production !
+    </div>
+
+    <h2>Server-Side Template Injection (SSTI) - Code Injection</h2>
+    <p class="text-muted">Vulnérabilités réelles d'injection et d'exécution de code C# côté serveur (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionTemplate" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de vulnérabilité</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.Replace("-", " ").ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple de payload :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Template Razor à tester</label>
+                    <textarea id="payload" name="payload" class="form-control font-monospace" rows="6"
+                              placeholder="Entrez votre template Razor...">@Model.Payload</textarea>
+                    <small class="form-text text-muted">
+                        Utilisez la syntaxe Razor: @@{ code C# } ou @@(expression)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-code"></i> Voir les endpoints vulnérables
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.Replace("-", " ").ToUpper()</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Pour tester les vulnérabilités SSTI réelles, utilisez ces endpoints :</p>
+
+                @if (Model.AttackType == "code-execution")
+                {
+                    <strong>Compilation et exécution de code C# :</strong>
+            
+                    <br />
+                    <code>POST /InjectionTemplate/ExecuteCode</code>
+
+                    <br />
+                    <pre class="mt-2">code: System.Diagnostics.Process.Start("calc.exe");</pre>
+                    <form action="/InjectionTemplate/ExecuteCode" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="code" value="System.Diagnostics.Process.Start(&quot;calc.exe&quot;);" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-bug"></i> Exécuter code dangereux
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "string-interpolation")
+                {
+                    <strong>Évaluation d'expressions :</strong>
+            
+                    <br />
+                    <code>POST /InjectionTemplate/EvaluateExpression</code>
+
+                    <br />
+                    <pre class="mt-2">template: Hello ${System.Environment.UserName} on ${System.Environment.MachineName}</pre>
+                    <form action="/InjectionTemplate/EvaluateExpression" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="template" value="Hello ${System.Environment.UserName} on ${System.Environment.MachineName}" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-code"></i> Évaluer expressions
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "reflection-injection")
+                {
+                    <strong>Invocation via réflexion :</strong>
+            
+                    <br />
+                    <code>POST /InjectionTemplate/InvokeViaReflection</code>
+
+                    <br />
+                    <pre class="mt-2">typeName: System.Diagnostics.Process
+        methodName: Start
+        parameters: notepad.exe</pre>
+                    <form action="/InjectionTemplate/InvokeViaReflection" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="typeName" value="System.Diagnostics.Process" />
+                        <input type="hidden" name="methodName" value="Start" />
+                        <input type="hidden" name="parameters" value="notepad.exe" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-terminal"></i> Invoquer via réflexion
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "file-read")
+                {
+                    <strong>Lecture de fichier avec path traversal :</strong>
+            
+                    <br />
+                    <code>POST /InjectionTemplate/ReadAndExecute</code>
+
+                    <br />
+                    <pre class="mt-2">filePath: ../../appsettings.json</pre>
+                    <form action="/InjectionTemplate/ReadAndExecute" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="filePath" value="../../appsettings.json" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-file-import"></i> Lire fichier sensible
+                        </button>
+                    </form>
+                }
+                else if (Model.AttackType == "dynamic-method")
+                {
+                    <strong>Création de méthode dynamique :</strong>
+            
+                    <br />
+                    <code>POST /InjectionTemplate/CreateDynamicMethod</code>
+
+                    <br />
+                    <pre class="mt-2">methodCode: (exemple simple)</pre>
+                    <form action="/InjectionTemplate/CreateDynamicMethod" method="post" target="_blank" class="mt-2">
+                        <input type="hidden" name="methodCode" value="dynamic" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-magic"></i> Créer méthode dynamique
+                        </button>
+                    </form>
+                }
+
+                <div class="mt-3">
+                    <a href="/InjectionTemplate/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Voir tous les endpoints vulnérables
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Code Compilation :</strong> CSharpCodeProvider.CompileAssemblyFromSource()</li>
+                    <li><strong>Expression Evaluation :</strong> Compilation dynamique d'expressions utilisateur</li>
+                    <li><strong>Reflection Abuse :</strong> Type.GetType().GetMethod().Invoke()</li>
+                    <li><strong>Path Traversal :</strong> Path.Combine() avec entrée utilisateur</li>
+                    <li><strong>Dynamic IL Generation :</strong> DynamicMethod avec émission IL</li>
+                    <li><strong>Unsafe Deserialization :</strong> BinaryFormatter.Deserialize()</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns SSTI détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Compilation dynamique :</h6>
+                        <pre class="small"><code>var provider = new CSharpCodeProvider();
+provider.CompileAssemblyFromSource(params, userCode);</code></pre>
+
+                        <h6>Évaluation d'expressions :</h6>
+                        <pre class="small"><code>// Template: Hello ${expression}
+// Expression compilée et évaluée</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Réflexion dangereuse :</h6>
+                        <pre class="small"><code>Type.GetType(userInput).GetMethod(userMethod).Invoke();</code></pre>
+
+                        <h6>Désérialisation :</h6>
+                        <pre class="small"><code>BinaryFormatter formatter = new();
+formatter.Deserialize(stream);</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">SonarQube</span>
+                    <span class="badge bg-info">Fortify</span>
+                    <span class="badge bg-success">Checkmarx</span>
+                    <span class="badge bg-secondary">Veracode</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Syntaxe Razor dangereuse -->
+    <div class="mt-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-skull-crossbones"></i> Syntaxe Razor extrêmement dangereuse</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Exécution de processus :</h6>
+                        <pre class="small"><code>System.Diagnostics.Process.Start("cmd.exe");</code></pre>
+
+                        <h6>Lecture de fichiers :</h6>
+                        <pre class="small"><code>System.IO.File.ReadAllText(userPath);</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Réflexion :</h6>
+                        <pre class="small"><code>Assembly.Load("user").GetType("Type").GetMethod("Method").Invoke(null, null)</code></pre>
+
+                        <h6>Méthode dynamique :</h6>
+                        <pre class="small"><code>new DynamicMethod("Name", typeof(void), null)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Ne jamais compiler de code dynamique</strong> avec du contenu utilisateur</li>
+                    <li><strong>Éviter CSharpCodeProvider</strong> avec des entrées non fiables</li>
+                    <li><strong>Désactiver la réflexion</strong> sur les types/méthodes sensibles</li>
+                    <li><strong>Valider tous les chemins de fichiers</strong> contre le path traversal</li>
+                    <li><strong>Ne jamais utiliser BinaryFormatter</strong> - utiliser JSON à la place</li>
+                    <li><strong>Sandbox et isolation</strong> pour tout code dynamique si nécessaire</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Endpoints disponibles -->
+    <div class="mt-4">
+        <h6><i class="fas fa-server"></i> Endpoints vulnérables disponibles</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Compilation & Exécution</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li><code>POST /InjectionTemplate/ExecuteCode</code></li>
+                                <li><code>POST /InjectionTemplate/EvaluateExpression</code></li>
+                                <li><code>POST /InjectionTemplate/InvokeViaReflection</code></li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">Inclusion & Désérialisation</div>
+                    <div class="card-body">
+                        <small>
+                            <ul class="mb-0">
+                                <li><code>POST /InjectionTemplate/ReadAndExecute</code></li>
+                                <li><code>POST /InjectionTemplate/CreateDynamicMethod</code></li>
+                                <li><code>POST /InjectionTemplate/UnsafeDeserialize</code></li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/template-injection.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.templateInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/template-injection.js"></script>
+}

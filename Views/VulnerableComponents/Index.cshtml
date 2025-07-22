@@ -1,0 +1,435 @@
+﻿@* @using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<ComponentsResult>
+
+@{
+    ViewData["Title"] = "Vulnerable and Outdated Components";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Ce module contient des composants réellement vulnérables détectables par les outils SAST.
+        Vulnerable and Outdated Components est la vulnérabilité #6 du OWASP Top 10 2021. Ne jamais déployer en production !
+    </div>
+
+    <h2>A06:2021 - Vulnerable and Outdated Components</h2>
+    <p class="text-muted">Utilisation de composants avec des vulnérabilités connues</p>
+
+    <!-- État des composants -->
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-circle"></i> <strong>Composants vulnérables détectés :</strong>
+        <span class="badge bg-danger">Newtonsoft.Json 9.0.1</span>
+        <span class="badge bg-danger">jQuery 2.1.4</span>
+        <span class="badge bg-danger">Bootstrap 3.3.7</span>
+        <span class="badge bg-danger">log4net 2.0.8</span>
+        <span class="badge bg-warning text-dark">15 vulnérabilités critiques</span>
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="VulnerableComponents" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type de vulnérabilité de composant</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key"
+                                    data-payload-example="@attackInfo.Value.PayloadExample"
+                                    data-risk-level="@attackInfo.Value.RiskLevel"
+                                    selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <strong>Exemple :</strong><br />
+                    <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Endpoint / Composant</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="/CheckDependencies">
+                    <small class="form-text text-muted">
+                        L'endpoint sera automatiquement rempli selon votre sélection
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-virus"></i> Analyser les composants vulnérables
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-skull-crossbones text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="mt-4">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Instructions de test</h5>
+                <p>Testez ces composants vulnérables directement :</p>
+
+                @if (Model.AttackType == "outdated-libs")
+                {
+                    <strong>Analyse des dépendances obsolètes :</strong>
+                    <br />
+                    <code>GET /VulnerableComponents/CheckDependencies</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/VulnerableComponents/CheckDependencies" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-search"></i> Scanner les dépendances
+                        </a>
+                        <a href="/VulnerableComponents/VulnerabilityScan" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-shield-virus"></i> Scan de vulnérabilités
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "deserialization")
+                {
+                    <strong>Désérialisation non sécurisée (Newtonsoft.Json 9.0.1) :</strong>
+                    <br />
+                    <code>POST /VulnerableComponents/DeserializeData</code>
+                    <br />
+                    <pre class="mt-2">{
+            "$type": "System.Windows.Data.ObjectDataProvider, PresentationFramework",
+            "MethodName": "Start",
+            "MethodParameters": {
+                "$type": "System.Collections.ArrayList",
+                "$values": ["calc.exe"]
+            }
+        }</pre>
+                    <button class="btn btn-danger btn-sm test-deserialization">
+                        <i class="fas fa-code"></i> Tester la désérialisation
+                    </button>
+                    <small class="text-muted d-block mt-2">CVE-2018-1000210 - TypeNameHandling.All permet RCE</small>
+                }
+                else if (Model.AttackType == "jquery-xss")
+                {
+                    <strong>jQuery 2.1.4 avec vulnérabilités XSS :</strong>
+                    <br />
+                    <code>GET /VulnerableComponents/JQueryTest?userInput=&lt;script&gt;alert('XSS')&lt;/script&gt;</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/VulnerableComponents/JQueryTest?userInput=<img src=x onerror=alert('XSS')>" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-bug"></i> Test XSS via jQuery
+                        </a>
+                        <a href="/VulnerableComponents/JQueryTest?userInput=<script>$.fn.jquery</script>" target="_blank" class="btn btn-warning btn-sm">
+                            <i class="fas fa-info"></i> Vérifier version jQuery
+                        </a>
+                    </div>
+                    <small class="text-muted d-block mt-2">CVE-2015-9251, CVE-2019-11358 - Multiple XSS</small>
+                }
+                else if (Model.AttackType == "unpatched-framework")
+                {
+                    <strong>Informations sur le framework non patché :</strong>
+                    <br />
+                    <code>GET /VulnerableComponents/FrameworkInfo</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/VulnerableComponents/FrameworkInfo" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-info-circle"></i> Voir les infos framework
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "supply-chain")
+                {
+                    <strong>Chaîne de dépendances complète :</strong>
+                    <br />
+                    <code>GET /VulnerableComponents/DependencyTree</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/VulnerableComponents/DependencyTree" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-sitemap"></i> Arbre de dépendances
+                        </a>
+                    </div>
+                }
+                else if (Model.AttackType == "no-security-updates")
+                {
+                    <strong>Packages abandonnés sans mises à jour :</strong>
+                    <br />
+                    <code>GET /VulnerableComponents/AbandonedPackages</code>
+                    <br />
+                    <div class="mt-2">
+                        <a href="/VulnerableComponents/AbandonedPackages" target="_blank" class="btn btn-danger btn-sm">
+                            <i class="fas fa-ghost"></i> Packages abandonnés
+                        </a>
+                    </div>
+                }
+
+                <div class="mt-3">
+                    <a href="/VulnerableComponents/TestEndpoints" target="_blank" class="btn btn-info btn-sm">
+                        <i class="fas fa-list"></i> Voir tous les composants vulnérables
+                    </a>
+                </div>
+            </div>
+
+            <!-- Vulnérabilités détectables -->
+            <div class="alert alert-warning mt-3">
+                <h6><i class="fas fa-search"></i> Ce que les SAST vont détecter :</h6>
+                <ul class="mb-0">
+                    <li><strong>Outdated Dependencies :</strong> Newtonsoft.Json 9.0.1, jQuery 2.1.4, etc.</li>
+                    <li><strong>Known CVEs :</strong> CVE-2018-1000210, CVE-2019-11358, CVE-2018-1285</li>
+                    <li><strong>Insecure Deserialization :</strong> TypeNameHandling.All</li>
+                    <li><strong>EOL Components :</strong> Composants non maintenus</li>
+                    <li><strong>Missing Security Updates :</strong> Versions non patchées</li>
+                    <li><strong>Supply Chain Risks :</strong> Dépendances transitives vulnérables</li>
+                </ul>
+            </div>
+        </div>
+    }
+
+    <!-- Dashboard des vulnérabilités -->
+    <div class="mt-4">
+        <h6><i class="fas fa-chart-bar"></i> Tableau de bord des vulnérabilités</h6>
+        <div class="vulnerability-dashboard">
+            <div class="stat-card critical">
+                <i class="fas fa-skull-crossbones fa-2x mb-2"></i>
+                <h3>5</h3>
+                <p>Critiques</p>
+            </div>
+            <div class="stat-card high">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h3>8</h3>
+                <p>Élevées</p>
+            </div>
+            <div class="stat-card medium">
+                <i class="fas fa-exclamation fa-2x mb-2"></i>
+                <h3>3</h3>
+                <p>Moyennes</p>
+            </div>
+            <div class="stat-card low">
+                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                <h3>1</h3>
+                <p>Faibles</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exemples de code vulnérable -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Patterns détectables par SAST</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Désérialisation non sécurisée :</h6>
+                        <pre class="small"><code>var settings = new JsonSerializerSettings
+{
+    TypeNameHandling = TypeNameHandling.All // CVE!
+};
+JsonConvert.DeserializeObject(data, settings);</code></pre>
+
+                        <h6>jQuery vulnérable :</h6>
+                        <pre class="small"><code>&lt;script src="jquery-2.1.4.min.js"&gt;&lt;/script&gt;
+$('#output').html(userInput); // XSS!</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Packages obsolètes (package.json) :</h6>
+                        <pre class="small"><code>"dependencies": {
+    "jquery": "2.1.4",     // Multiple CVEs
+    "bootstrap": "3.3.7",  // XSS vulns
+    "angular": "1.4.0"     // Outdated
+}</code></pre>
+
+                        <h6>NuGet packages (.csproj) :</h6>
+                        <pre class="small"><code>&lt;PackageReference Include="Newtonsoft.Json" 
+                  Version="9.0.1" /&gt; &lt;!-- CVE-2018-1000210 --&gt;</code></pre>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <strong>Outils qui détecteront ces failles :</strong>
+                    <span class="badge bg-danger">Snyk</span>
+                    <span class="badge bg-warning text-dark">OWASP Dependency Check</span>
+                    <span class="badge bg-info">WhiteSource</span>
+                    <span class="badge bg-success">GitHub Dependabot</span>
+                    <span class="badge bg-secondary">npm audit</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des composants vulnérables -->
+    <div class="mt-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6><i class="fas fa-virus"></i> Composants vulnérables actuels</h6>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Composant</th>
+                            <th>Version actuelle</th>
+                            <th>Version sûre</th>
+                            <th>CVEs</th>
+                            <th>Risque</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="table-danger">
+                            <td><i class="fab fa-js"></i> Newtonsoft.Json</td>
+                            <td><code>9.0.1</code></td>
+                            <td><code>13.0.3</code></td>
+                            <td>CVE-2018-1000210</td>
+                            <td><span class="badge bg-danger">CRITICAL</span></td>
+                        </tr>
+                        <tr class="table-danger">
+                            <td><i class="fab fa-js-square"></i> jQuery</td>
+                            <td><code>2.1.4</code></td>
+                            <td><code>3.7.1</code></td>
+                            <td>3 CVEs</td>
+                            <td><span class="badge bg-danger">HIGH</span></td>
+                        </tr>
+                        <tr class="table-danger">
+                            <td><i class="fab fa-bootstrap"></i> Bootstrap</td>
+                            <td><code>3.3.7</code></td>
+                            <td><code>5.3.2</code></td>
+                            <td>3 CVEs</td>
+                            <td><span class="badge bg-danger">HIGH</span></td>
+                        </tr>
+                        <tr class="table-warning">
+                            <td><i class="fas fa-file-alt"></i> log4net</td>
+                            <td><code>2.0.8</code></td>
+                            <td><code>2.0.15</code></td>
+                            <td>CVE-2018-1285</td>
+                            <td><span class="badge bg-warning text-dark">MEDIUM</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prévention (non implémentée) -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Prévention (NON implémentée ici)</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Note :</strong> Ces protections ne sont PAS implémentées pour permettre la détection SAST :</p>
+                <ul class="mb-0">
+                    <li><strong>Inventaire des composants :</strong> Maintenir une liste à jour</li>
+                    <li><strong>Scan régulier :</strong> npm audit, dotnet list package --vulnerable</li>
+                    <li><strong>Politique de mise à jour :</strong> Patches de sécurité automatiques</li>
+                    <li><strong>Sources fiables :</strong> Télécharger depuis sources officielles</li>
+                    <li><strong>Monitoring CVE :</strong> Surveiller les nouvelles vulnérabilités</li>
+                    <li><strong>SBOM :</strong> Software Bill of Materials</li>
+                    <li><strong>Dépendances minimales :</strong> Supprimer les composants inutiles</li>
+                    <li><strong>Configuration sécurisée :</strong> TypeNameHandling.None pour JSON</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload de package -->
+    <div class="mt-4">
+        <h6><i class="fas fa-upload"></i> Test d'upload de package</h6>
+        <div class="card">
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="packageFile" class="form-label">Uploader un package (sans validation!)</label>
+                        <input type="file" class="form-control" id="packageFile" name="package" accept=".dll,.exe,.nupkg,.jar,.zip">
+                    </div>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-upload"></i> Upload sans vérification
+                    </button>
+                </form>
+                <div id="uploadResult" class="mt-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/vulnerable-components.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttackInfos, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null }))
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.vulnerableComponentsData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? "")
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/vulnerable-components.js"></script>
+} *@

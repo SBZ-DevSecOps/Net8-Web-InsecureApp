@@ -1,0 +1,517 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<ElResult>
+
+@{
+    ViewData["Title"] = "Expression Language (EL) Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Expression Language Injection peut permettre l'exécution de code arbitraire.
+        Cette vulnérabilité affecte de nombreux frameworks (Spring, Struts, JSF). Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>Expression Language Injection - .NET</h2>
+    <p class="text-muted">Tests d'injection d'expressions dans les contextes .NET (LINQ, Reflection, Dynamic Compilation, etc.) (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionEl" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="w-100">
+                            <strong>Exemple de payload :</strong><br />
+                            <code id="payloadExampleContent" class="d-block mt-2"></code>
+                        </div>
+                    </div>
+                    <button type="button" id="useExampleBtn" class="btn btn-sm btn-outline-primary mt-2">
+                        Utiliser cet exemple
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Expression .NET à tester</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace" value="@Model.Payload" placeholder="User.Name.ToUpper() ou typeof(Process).GetMethod('Start')" />
+                    <small class="form-text text-muted">
+                        Expressions C#, LINQ, Reflection, PowerShell, etc.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-play"></i> Évaluer l'expression
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-biohazard text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - EL Injection</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'évaluation</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@Html.Raw(attackInfo.ErrorExplanation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        var result = Model.Results.First();
+
+        <div class="mt-4">
+            <h5><i class="fas fa-calculator"></i> Résultats de l'évaluation EL</h5>
+
+            <!-- Impact de sécurité critique -->
+            @if (!string.IsNullOrEmpty(result.SecurityImpact))
+            {
+                <div class="alert alert-danger mt-3">
+                    <h6><i class="fas fa-skull-crossbones"></i> Impact de sécurité critique :</h6>
+                    <p class="mb-0">@result.SecurityImpact</p>
+                </div>
+            }
+
+            <!-- Expression et résultat -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-secondary text-white">
+                            <strong>Expression :</strong>
+                        </div>
+                        <div class="card-body">
+                            <code class="h5">@result.Expression</code>
+                            <div class="mt-2">
+                                <span class="badge bg-info">Type: @(result.ExpressionType ?? "Unknown")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <strong>Valeur évaluée :</strong>
+                        </div>
+                        <div class="card-body">
+                            <pre class="mb-0"><code>@result.EvaluatedValue</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Données sensibles exposées -->
+            @if (result.SensitiveDataExposed?.Any() == true)
+            {
+                <div class="card mt-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <strong><i class="fas fa-key"></i> Données sensibles exposées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                @foreach (var data in result.SensitiveDataExposed)
+                                {
+                                    <tr>
+                                        <td style="width: 40%;"><strong>@data.Key</strong></td>
+                                        <td class="text-danger">
+                                            <i class="fas fa-lock"></i> @data.Value
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Patterns dangereux détectés -->
+            @if (result.DangerousPatterns?.Any() == true)
+            {
+                <div class="card mt-3 border-warning">
+                    <div class="card-header bg-warning">
+                        <strong><i class="fas fa-bug"></i> Patterns dangereux détectés :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var pattern in result.DangerousPatterns)
+                            {
+                                <li class="text-danger">@pattern</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Contexte accédé -->
+            @if (result.ContextAccessed?.Any() == true)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <strong><i class="fas fa-database"></i> Objets du contexte accédés :</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var ctx in result.ContextAccessed)
+                            {
+                                <span class="badge bg-secondary">@ctx</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Méthodes invoquées -->
+            @if (result.MethodsInvoked?.Any() == true)
+            {
+                <div class="card mt-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <strong><i class="fas fa-code"></i> Méthodes invoquées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var method in result.MethodsInvoked)
+                            {
+                                <li><code>@method</code></li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Variables d'environnement -->
+            @if (result.EnvironmentVariables?.Any() == true)
+            {
+                <div class="card mt-3 border-warning">
+                    <div class="card-header bg-warning">
+                        <strong><i class="fas fa-server"></i> Variables d'environnement exposées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                @foreach (var env in result.EnvironmentVariables)
+                                {
+                                    <tr>
+                                        <td style="width: 30%;"><strong>@env.Key</strong></td>
+                                        <td><code>@env.Value</code></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Propriétés système -->
+            @if (result.SystemProperties?.Any() == true)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <strong><i class="fas fa-cogs"></i> Propriétés système :</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tbody>
+                                @foreach (var prop in result.SystemProperties)
+                                {
+                                    <tr>
+                                        <td style="width: 30%;"><strong>@prop.Key</strong></td>
+                                        <td>@prop.Value</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Moteurs compatibles (polyglot) -->
+            @if (result.CompatibleEngines?.Any() == true)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <strong><i class="fas fa-puzzle-piece"></i> Moteurs EL compatibles détectés :</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var engine in result.CompatibleEngines)
+                            {
+                                <span class="badge bg-info">@engine</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Techniques de bypass -->
+            @if (result.BypassTechniquesUsed?.Any() == true)
+            {
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <strong><i class="fas fa-user-ninja"></i> Techniques de contournement utilisées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var bypass in result.BypassTechniquesUsed)
+                            {
+                                <li>@bypass</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Statistiques -->
+            <div class="alert alert-secondary mt-3">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <strong>Temps d'évaluation</strong><br>
+                        <span class="h5">@result.EvaluationTime.ToString("F2") ms</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Réflexion utilisée</strong><br>
+                        <span class="h5 @(result.ReflectionUsed ? "text-danger" : "text-success")">
+                            @(result.ReflectionUsed ? "OUI" : "NON")
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Processus lancés</strong><br>
+                        <span class="h5 @(result.ProcessesStarted?.Any() == true ? "text-danger" : "text-success")">
+                            @(result.ProcessesStarted?.Count ?? 0)
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Classes accédées</strong><br>
+                        <span class="h5">@(result.ClassesAccessed?.Count ?? 0)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Référence des syntaxes EL -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Syntaxes Expression Language</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <h6>JSP EL :</h6>
+                        <pre class="small"><code>${expression}
+${user.name}
+${7 * 7}
+${empty list}</code></pre>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>SpEL (Spring) :</h6>
+                        <pre class="small"><code>#{expression}
+#{T(System).exit(0)}
+#{@@bean.method()}
+#{''.class.forName()}</code></pre>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>OGNL (Struts) :</h6>
+                        <pre class="small"><code>%{expression}
+%{#a=new java.lang.ProcessBuilder()}
+%{@@java.lang.System@@exit(0)}
+%{#context['key']}</code></pre>
+                    </div>
+                    <div class="col-md-3">
+                        <h6>Bypass courants :</h6>
+                        <pre class="small"><code>${''.class}
+${''.getClass()}
+${@@''.getClass()}
+${'R'+'untime'}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Objets de contexte disponibles -->
+    <div class="mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-list"></i> Objets disponibles dans le contexte</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <ul class="small">
+                            <li><code>user</code> - Informations utilisateur (name, password, apiKey)</li>
+                            <li><code>session</code> - Session et attributs</li>
+                            <li><code>applicationScope</code> - Configuration application</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="small">
+                            <li><code>request</code> - Headers et informations requête</li>
+                            <li><code>system</code> - Informations système</li>
+                            <li><code>T()</code> - Accès aux types (SpEL)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention EL Injection</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Ne jamais évaluer des expressions utilisateur :</strong> Traitez toujours les entrées comme des données, pas du code</li>
+                    <li><strong>Désactiver EL si non nécessaire :</strong> <code>&lt;%@@ page isELIgnored="true" %&gt;</code></li>
+                    <li><strong>Utiliser des listes blanches :</strong> Limitez les objets accessibles dans le contexte EL</li>
+                    <li><strong>Sandbox EL :</strong> Utilisez des évaluateurs EL sécurisés avec restrictions</li>
+                    <li><strong>Mise à jour des frameworks :</strong> Gardez Spring, Struts, JSF à jour</li>
+                    <li><strong>WAF avec règles anti-EL :</strong> Bloquez les patterns d'injection connus</li>
+                    <li><strong>Monitoring :</strong> Surveillez les tentatives d'accès à Runtime, ProcessBuilder, etc.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+
+        .card pre {
+            margin-bottom: 0;
+        }
+
+        .fa-biohazard {
+            animation: rotate 4s linear infinite;
+        }
+
+        @@keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        code {
+            color: #d63384;
+        }
+
+        .badge {
+            font-size: 0.875em;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Json.Serialize(Model.AttackInfos)
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.elInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<ElResult>())
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/el-injection.js"></script>
+}

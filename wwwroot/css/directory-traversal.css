@@ -1,0 +1,444 @@
+﻿/* directory-traversal.css - Styles spécifiques pour le module Directory Traversal */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Formulaires de traversal */
+.traversal-form {
+    background-color: #f8f9fa;
+    border: 2px dashed #dc3545 !important;
+    position: relative;
+}
+
+    .traversal-form::before {
+        content: "⚠️ PATH NON VALIDÉ";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Input styling */
+input[type="text"].form-control {
+    font-family: 'Courier New', monospace;
+}
+
+    input[type="text"].form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* File browser */
+.file-browser {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.file-entry {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+}
+
+    .file-entry:hover {
+        background-color: #e9ecef;
+        transform: translateX(5px);
+    }
+
+    .file-entry i {
+        margin-right: 8px;
+        width: 20px;
+        text-align: center;
+    }
+
+.file-size {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-left: auto;
+}
+
+/* Path display */
+#pathDisplay {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+
+/* Results display */
+#traversalResults .card {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#traversalResultContent pre {
+    font-size: 0.85rem;
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+/* Code display */
+pre code {
+    display: block;
+    padding: 0;
+    background-color: transparent;
+}
+
+/* Table for ZIP entries */
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table-danger {
+    background-color: #f8d7da !important;
+}
+
+/* Folder icons animation */
+.fa-folder {
+    animation: folderPulse 2s infinite;
+}
+
+@keyframes folderPulse {
+    0%, 100% {
+        color: #ffc107;
+    }
+
+    50% {
+        color: #fd7e14;
+    }
+}
+
+.fa-folder-open {
+    animation: folderOpen 1s ease-out;
+}
+
+@keyframes folderOpen {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Alert animations */
+.alert.position-fixed {
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Danger indicators */
+.badge.bg-danger {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* File type icons */
+.fa-file-code {
+    color: #28a745;
+}
+
+.fa-file-alt {
+    color: #17a2b8;
+}
+
+.fa-file-archive {
+    color: #6f42c1;
+}
+
+.fa-history {
+    color: #6c757d;
+}
+
+/* Code examples */
+pre.small {
+    font-size: 0.8rem;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+    pre.small code {
+        color: #495057;
+    }
+
+/* Encoding examples */
+.alert-secondary code {
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: #212529;
+    font-size: 0.9em;
+}
+
+/* Button effects */
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Traversal specific icons */
+.fa-folder-tree {
+    color: #fd7e14;
+}
+
+.fa-percentage {
+    color: #6610f2;
+}
+
+.fa-cut {
+    color: #dc3545;
+}
+
+.fa-virus {
+    color: #dc3545;
+    animation: virusSpin 3s linear infinite;
+}
+
+@keyframes virusSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Windows icon */
+.fa-windows {
+    color: #0078d4;
+}
+
+/* File paths */
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+
+/* Backup file indicators */
+.backup-file {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+/* ZIP slip visualization */
+.zip-entry-dangerous {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Directory separator emphasis */
+.path-separator {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+/* Tooltips enhancement */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+}
+
+/* Loading animation for file operations */
+.loading-file {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #dc3545;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .traversal-form {
+        padding: 15px !important;
+    }
+
+        .traversal-form::before {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+        }
+
+    pre {
+        font-size: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .file-browser {
+        max-height: 250px;
+    }
+
+    .table-responsive {
+        max-height: 200px;
+    }
+}
+
+/* Path traversal patterns */
+.traversal-pattern {
+    display: inline-block;
+    background-color: #dc3545;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    margin: 2px;
+}
+
+/* Final touches */
+.text-muted small {
+    font-style: italic;
+}
+
+.fa-shield-alt {
+    color: #007bff;
+}
+
+/* Success indicator for exploits */
+.exploit-success {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-color: #dc3545;
+    border-radius: 50%;
+    margin-left: 10px;
+    animation: exploitPulse 1s infinite;
+}
+
+@keyframes exploitPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}
+
+/* File content preview */
+.file-preview {
+    background-color: #263238;
+    color: #aed581;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    overflow-x: auto;
+    max-height: 300px;
+}
+
+/* Null byte indicator */
+.null-byte {
+    background-color: #dc3545;
+    color: white;
+    padding: 0 4px;
+    border-radius: 2px;
+    font-weight: bold;
+}

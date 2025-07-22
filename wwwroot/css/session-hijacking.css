@@ -1,0 +1,465 @@
+﻿/* session-hijacking.css - Styles spécifiques pour le module Session Hijacking */
+
+/* Zone d'exemple de payload */
+#payloadExample {
+    transition: all 0.3s ease;
+}
+
+    #payloadExample pre {
+        background-color: #f8f9fa;
+        color: #212529;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+    }
+
+    #payloadExample code {
+        color: #212529;
+        background-color: transparent;
+        font-size: 0.9em;
+        font-family: 'Courier New', monospace;
+    }
+
+/* Formulaires de session */
+.session-form {
+    background-color: #f8f9fa;
+    border: 2px dashed #dc3545 !important;
+    position: relative;
+}
+
+    .session-form::before {
+        content: "⚠️ SESSION VULNÉRABLE";
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background-color: #dc3545;
+        color: white;
+        padding: 2px 10px;
+        font-size: 0.75rem;
+        border-radius: 3px;
+        font-weight: bold;
+    }
+
+/* Input styling */
+input[type="text"].form-control,
+input[type="number"].form-control {
+    font-family: 'Courier New', monospace;
+}
+
+    input[type="text"].form-control:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* Session ID display */
+code {
+    background-color: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+.text-break {
+    word-break: break-all;
+}
+
+/* Cookie monitor */
+#cookieMonitor .card {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fa-cookie {
+    animation: cookieBite 2s infinite;
+}
+
+@keyframes cookieBite {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
+}
+
+/* Results display */
+#sessionResults .card {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* User secret icon animation */
+.fa-user-secret {
+    animation: secretPulse 3s infinite;
+}
+
+@keyframes secretPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Token display */
+.badge.bg-danger {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* JWT display */
+pre {
+    font-size: 0.85rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+    pre code {
+        background-color: transparent;
+        padding: 0;
+    }
+
+/* Session table */
+.table-responsive {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.table-sm {
+    font-size: 0.875rem;
+}
+
+    .table-sm code {
+        font-size: 0.8rem;
+    }
+
+/* Button effects */
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+    transition: all 0.2s ease;
+}
+
+.btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Alert animations */
+.alert.position-fixed {
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Session specific icons */
+.fa-dice-d20 {
+    color: #6f42c1;
+}
+
+.fa-crystal-ball {
+    color: #20c997;
+}
+
+.fa-link {
+    color: #dc3545;
+}
+
+.fa-eye {
+    color: #ffc107;
+}
+
+.fa-cookie-bite {
+    color: #6c757d;
+}
+
+.fa-mask {
+    color: #343a40;
+}
+
+.fa-key {
+    color: #007bff;
+}
+
+.fa-infinity {
+    color: #dc3545;
+}
+
+.fa-signature {
+    color: #6f42c1;
+}
+
+.fa-hammer {
+    color: #fd7e14;
+}
+
+.fa-redo {
+    color: #20c997;
+}
+
+.fa-clone {
+    color: #6610f2;
+}
+
+.fa-layer-group {
+    color: #e83e8c;
+}
+
+/* Code examples */
+pre.small {
+    font-size: 0.8rem;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+    pre.small code {
+        color: #495057;
+    }
+
+/* Vulnerability badges */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+}
+
+/* Session card styling */
+.card.border-danger {
+    border-width: 2px;
+}
+
+.card.border-warning {
+    border-width: 2px;
+}
+
+/* Hijack buttons */
+.btn-sm.btn-danger {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Cookie list */
+#cookieList ul {
+    margin-bottom: 0;
+}
+
+#cookieList li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+    #cookieList li:last-child {
+        border-bottom: none;
+    }
+
+/* Stolen tokens display */
+.text-danger code {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* JWT forge display */
+.text-break {
+    overflow-wrap: break-word;
+}
+
+/* Session state indicators */
+.session-active {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #28a745;
+    border-radius: 50%;
+    margin-right: 5px;
+    animation: blink 2s infinite;
+}
+
+.session-expired {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background-color: #dc3545;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+@keyframes blink {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* Tooltips enhancement */
+.tooltip-inner {
+    max-width: 300px;
+    text-align: left;
+}
+
+/* Loading spinner for multiple sessions */
+.creating-sessions {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #dc3545;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .session-form {
+        padding: 15px !important;
+    }
+
+        .session-form::before {
+            font-size: 0.65rem;
+            padding: 1px 6px;
+        }
+
+    pre {
+        font-size: 0.75rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .btn-sm {
+        margin-bottom: 0.5rem;
+    }
+
+    .table-responsive {
+        max-height: 200px;
+    }
+}
+
+/* Attack type indicators */
+.attack-indicator {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+    .attack-indicator.critical {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .attack-indicator.high {
+        background-color: #fd7e14;
+        color: white;
+    }
+
+    .attack-indicator.medium {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+/* Final touches */
+.text-muted small {
+    font-style: italic;
+}
+
+.fa-tools {
+    color: #ffc107;
+}
+
+.fa-shield-alt {
+    color: #007bff;
+}
+
+/* Success indicator for exploits */
+.exploit-success {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-color: #dc3545;
+    border-radius: 50%;
+    margin-left: 10px;
+    animation: exploitPulse 1s infinite;
+}
+
+@keyframes exploitPulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+}

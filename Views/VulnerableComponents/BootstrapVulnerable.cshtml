@@ -1,0 +1,112 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bootstrap @ViewBag.BootstrapVersion - Vulnérable XSS</title>
+    <!-- VULNÉRABLE : Bootstrap 3.3.7 avec CVE-2018-14041, CVE-2018-14042 -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container" style="margin-top: 20px;">
+        <h1>Test Bootstrap Vulnérable</h1>
+
+        <div class="alert alert-danger">
+            <strong>⚠️ DANGER :</strong> Cette page utilise Bootstrap @ViewBag.BootstrapVersion qui contient des vulnérabilités XSS !
+            <br>CVE-2018-14041, CVE-2018-14042, CVE-2019-8331
+        </div>
+
+        <h2>Vulnérabilités Bootstrap 3.3.7 :</h2>
+
+        <!-- VULNÉRABLE : Tooltip avec contenu utilisateur -->
+        <button type="button"
+                class="btn btn-danger"
+                data-toggle="tooltip"
+                data-placement="top"
+                data-html="true"
+                title="@ViewBag.TooltipContent">
+            Survolez-moi (XSS via Tooltip)
+        </button>
+
+        <!-- VULNÉRABLE : Popover avec contenu utilisateur -->
+        <button type="button"
+                class="btn btn-warning"
+                data-toggle="popover"
+                data-placement="right"
+                data-html="true"
+                title="Popover vulnérable"
+                data-content="@ViewBag.TooltipContent">
+            Cliquez-moi (XSS via Popover)
+        </button>
+
+        <!-- VULNÉRABLE : Modal avec contenu dynamique -->
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#vulnerableModal">
+            Ouvrir Modal (XSS possible)
+        </button>
+
+        <!-- Modal vulnérable -->
+        <div class="modal fade" id="vulnerableModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Modal avec contenu utilisateur</h4>
+                    </div>
+                    <div class="modal-body">
+                        <!-- VULNÉRABLE : Injection directe -->
+                        @Html.Raw(ViewBag.TooltipContent)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">Détails des CVEs :</h3>
+        <table class="table table-bordered">
+            <tr>
+                <th>CVE</th>
+                <th>Description</th>
+                <th>CVSS</th>
+            </tr>
+            <tr class="danger">
+                <td>CVE-2018-14041</td>
+                <td>XSS dans data-target attribute</td>
+                <td>6.1</td>
+            </tr>
+            <tr class="danger">
+                <td>CVE-2018-14042</td>
+                <td>XSS dans collapse data-parent attribute</td>
+                <td>6.1</td>
+            </tr>
+            <tr class="danger">
+                <td>CVE-2019-8331</td>
+                <td>XSS dans tooltip/popover plugins</td>
+                <td>6.1</td>
+            </tr>
+        </table>
+
+        <h3>Code vulnérable :</h3>
+        <pre class="bg-light p-3">
+// Initialisation des composants Bootstrap vulnérables
+$('[data-toggle="tooltip"]').tooltip({html: true}); // XSS!
+$('[data-toggle="popover"]').popover({html: true}); // XSS!
+        </pre>
+
+        <div style="margin-top: 40px;">
+            <a href="/VulnerableComponents" class="btn btn-default">← Retour</a>
+        </div>
+    </div>
+
+    <script>
+        // VULNÉRABLE : Activation des tooltips et popovers avec HTML
+        $(document).ready(function(){
+            $('[data-toggle="tooltip"]').tooltip({html: true}); // Permet XSS!
+            $('[data-toggle="popover"]').popover({html: true}); // Permet XSS!
+
+            console.log('Bootstrap version:', $.fn.tooltip.Constructor.VERSION);
+        });
+    </script>
+</body>
+</html>

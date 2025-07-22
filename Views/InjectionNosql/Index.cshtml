@@ -1,0 +1,402 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<NoSqlResult>
+
+@{
+    ViewData["Title"] = "NoSQL Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application simule des vulnérabilités NoSQL (MongoDB).
+        Les injections NoSQL peuvent permettre le contournement d'authentification et l'extraction de données. Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>NoSQL Injection - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection NoSQL sur une base MongoDB simulée (A03 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionNosql" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="w-100">
+                            <strong>Exemple de payload :</strong><br />
+                            <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                        </div>
+                    </div>
+                    <button type="button" id="useExampleBtn" class="btn btn-sm btn-outline-primary mt-2">
+                        Utiliser cet exemple
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload JSON/NoSQL à tester</label>
+                    <textarea id="payload" name="payload" class="form-control font-monospace" rows="4" placeholder='{"username": "admin", "password": {"$ne": null}}'>@Model.Payload</textarea>
+                    <small class="form-text text-muted">
+                        Entrez une requête MongoDB au format JSON avec des opérateurs NoSQL
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-database"></i> Exécuter la requête NoSQL
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "critical" => "alert-danger",
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "Critical" || attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - NoSQL Injection</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "critical" || attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Requête MongoDB exécutée -->
+    @if (!string.IsNullOrEmpty(Model.ExecutedSql))
+    {
+        <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Requête MongoDB exécutée :</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="copyQueryToClipboard()">
+                    <i class="fas fa-copy"></i> Copier
+                </button>
+            </div>
+            <pre class="bg-dark text-light p-3 border rounded"><code>@Model.ExecutedSql</code></pre>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'exécution</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@Html.Raw(attackInfo.ErrorExplanation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        var result = Model.Results.First();
+
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-database"></i> Résultats NoSQL (@result.MatchedDocuments.Count documents)</h5>
+                <button type="button" class="btn btn-sm btn-outline-success" onclick="exportResults()">
+                    <i class="fas fa-download"></i> Exporter JSON
+                </button>
+            </div>
+
+            <!-- Alertes spéciales -->
+            @if (result.JavaScriptExecuted)
+            {
+                <div class="alert alert-danger mt-2">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Code JavaScript exécuté !</strong>
+                    L'injection a permis l'exécution de code JavaScript côté base de données.
+                </div>
+            }
+
+            @if (result.SensitiveDataExposed)
+            {
+                <div class="alert alert-warning mt-2">
+                    <i class="fas fa-user-secret"></i> <strong>Données sensibles exposées !</strong>
+                    Des mots de passe, clés API ou autres données confidentielles ont été extraites.
+                </div>
+            }
+
+            <!-- Pipeline stages si applicable -->
+            @if (result.PipelineStages?.Any() == true)
+            {
+                <div class="card mt-3 border-info">
+                    <div class="card-header bg-info text-white">
+                        <strong>Pipeline d'agrégation détecté :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var stage in result.PipelineStages)
+                            {
+                                <li>@stage</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Documents trouvés -->
+            @foreach (var doc in result.MatchedDocuments)
+            {
+                <div class="card mt-3">
+                    <div class="card-header bg-dark text-white">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>_id:</strong> @doc.Id</span>
+                            @if (doc.Data.ContainsKey("roles") && doc.Data["roles"] is List<string> roles && roles.Contains("admin"))
+                            {
+                                <span class="badge bg-danger">ADMIN</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @foreach (var field in doc.Data)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <strong>@field.Key:</strong>
+                                    @if (field.Key == "password" || field.Key == "apiKeys")
+                                    {
+                                        <span class="text-danger">
+                                            <i class="fas fa-lock"></i> @field.Value
+                                        </span>
+                                    }
+                                    else if (field.Key == "creditCard" || field.Key == "ssn")
+                                    {
+                                        <span class="text-warning">
+                                            <i class="fas fa-credit-card"></i> @field.Value
+                                        </span>
+                                    }
+                                    else if (field.Value is List<string> list)
+                                    {
+                                        <span class="badge bg-secondary">[@string.Join(", ", list)]</span>
+                                    }
+                                    else if (field.Value is DateTime date)
+                                    {
+                                        <span>@date.ToString("yyyy-MM-dd HH:mm:ss")</span>
+                                    }
+                                    else if (field.Value is bool boolVal)
+                                    {
+                                        <span class="badge bg-@(boolVal ? "danger" : "success")">@boolVal</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@field.Value</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Statistiques -->
+            <div class="alert alert-secondary mt-3">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <strong>Temps d'exécution</strong><br>
+                        <span class="h5">@result.ExecutionTime.ToString("F2") ms</span>
+                        @if (result.ExecutionTime > 1500)
+                        {
+                            <br>
+
+                            <small class="text-warning">⚠️ Délai suspect</small>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Documents trouvés</strong><br>
+                        <span class="h5">@result.MatchedDocuments.Count</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Type d'injection</strong><br>
+                        <span class="h5">@Model.AttackType.ToUpper()</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.AttackType) && string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle"></i> Aucun document trouvé.
+            La requête NoSQL n'a retourné aucun résultat.
+        </div>
+    }
+
+    <!-- Exemples d'opérateurs MongoDB -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Opérateurs MongoDB courants</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Comparaison :</h6>
+                        <ul class="small">
+                            <li><code>$ne</code> - Not equal</li>
+                            <li><code>$gt</code> - Greater than</li>
+                            <li><code>$gte</code> - Greater or equal</li>
+                            <li><code>$lt</code> - Less than</li>
+                            <li><code>$in</code> - In array</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Logique :</h6>
+                        <ul class="small">
+                            <li><code>$or</code> - Logical OR</li>
+                            <li><code>$and</code> - Logical AND</li>
+                            <li><code>$not</code> - Negation</li>
+                            <li><code>$nor</code> - Not OR</li>
+                            <li><code>$exists</code> - Field exists</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Évaluation :</h6>
+                        <ul class="small">
+                            <li><code>$regex</code> - Regular expression</li>
+                            <li><code>$where</code> - JavaScript</li>
+                            <li><code>$type</code> - Type check</li>
+                            <li><code>$mod</code> - Modulo</li>
+                            <li><code>$text</code> - Text search</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention NoSQL</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Validation stricte :</strong> Valider et typer tous les inputs (pas de conversion automatique string → objet)</li>
+                    <li><strong>Désactiver JavaScript :</strong> Désactiver l'évaluation JavaScript dans MongoDB</li>
+                    <li><strong>Échapper les opérateurs :</strong> Filtrer les caractères $ et {} dans les entrées utilisateur</li>
+                    <li><strong>Utiliser des ORMs sécurisés :</strong> Mongoose, MongoEngine avec validation de schéma</li>
+                    <li><strong>Principe du moindre privilège :</strong> Utilisateur MongoDB avec permissions minimales</li>
+                    <li><strong>Requêtes paramétrées :</strong> Utiliser des requêtes préparées quand possible</li>
+                    <li><strong>Monitoring :</strong> Surveiller les requêtes anormales ($where, $function)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+
+            pre.bg-dark code {
+                color: #fff !important;
+            }
+
+        .card pre {
+            margin-bottom: 0;
+        }
+
+        textarea.form-control {
+            font-family: 'Courier New', monospace;
+        }
+
+        .badge {
+            font-size: 0.875em;
+        }
+
+        .card-body .row > div {
+            word-break: break-word;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Json.Serialize(Model.AttackInfos)
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.nosqlInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<NoSqlResult>())
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/nosql-injection.js"></script>
+}

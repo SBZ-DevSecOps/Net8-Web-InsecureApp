@@ -1,0 +1,11 @@
+﻿@{
+    ViewData["Title"] = "Recherche Produit (Injection SQL vulnérable)";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form method="post" asp-action="Search">
+    <label>Produit :</label>
+    <input type="text" name="name" />
+    <button type="submit">Rechercher</button>
+</form>

@@ -1,0 +1,30 @@
+{
+  {
+    "name": "insecure-app-web-net8",
+    "version": "1.0.0",
+    "description": "Application de démonstration OWASP Top 10 avec composants vulnérables",
+    "private": true,
+    "dependencies": {
+      "jquery": "2.1.4",
+      "bootstrap": "3.3.7",
+      "lodash": "4.17.4",
+      "moment": "2.18.1",
+      "angular": "1.4.0",
+      "express": "4.15.0",
+      "react": "16.2.0",
+      "webpack": "3.10.0"
+    },
+    "devDependencies": {
+      "grunt": "0.4.5",
+      "gulp": "3.9.1"
+    },
+    "scripts": {
+      "audit": "npm audit",
+      "audit-fix": "echo 'Ne PAS exécuter npm audit fix - nous voulons garder les versions vulnérables pour la démo!'",
+      "check-vulnerabilities": "npm audit --json"
+    },
+    "engines": {
+      "node": ">=8.0.0"
+    },
+    "license": "MIT"
+  }

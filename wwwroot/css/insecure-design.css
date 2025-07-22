@@ -1,0 +1,245 @@
+﻿/* insecure-design.css - Styles spécifiques pour le module Insecure Design */
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pulse-animation {
+    animation: pulse 0.5s ease-in-out 2;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.5);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Zone d'exemple améliorée */
+#payloadExample {
+    background-color: #f8f9fa;
+    border-left: 4px solid #6c757d;
+}
+
+    #payloadExample pre {
+        background-color: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 0;
+        color: #212529;
+        font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    }
+
+#useExampleBtn {
+    transition: all 0.2s ease;
+}
+
+    #useExampleBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+/* Textarea amélioré */
+textarea#payload {
+    min-height: 100px;
+    max-height: 300px;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+    textarea#payload:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+/* Cartes avec highlight */
+.card {
+    transition: all 0.3s ease;
+}
+
+    .card.highlight-card {
+        border-color: #dc3545 !important;
+        border-width: 2px;
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.2);
+    }
+
+/* Historique des tests */
+.history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.history-entry {
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #6c757d;
+    transition: all 0.2s ease;
+}
+
+    .history-entry:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .history-entry.exploit-success {
+        border-left-color: #dc3545;
+        background-color: rgba(220, 53, 69, 0.05);
+    }
+
+    .history-entry.exploit-failed {
+        border-left-color: #28a745;
+        background-color: rgba(40, 167, 69, 0.05);
+    }
+
+    .history-entry .time {
+        color: #6c757d;
+        font-size: 0.85em;
+    }
+
+    .history-entry .type {
+        font-weight: 600;
+        color: #495057;
+    }
+
+.payload-preview {
+    font-size: 0.85em;
+}
+
+    .payload-preview code {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+
+/* Badges personnalisés */
+.badge {
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Amélioration des alertes */
+.alert h5 {
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.alert hr {
+    margin: 1rem 0;
+    opacity: 0.2;
+}
+
+/* Scrollbar personnalisée pour l'historique */
+.history-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+    .history-list::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .history-entry {
+        font-size: 0.9em;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    pre {
+        font-size: 0.8em;
+    }
+}
+
+/* Style pour les exemples de code inline */
+code {
+    color: #e83e8c;
+    background-color: rgba(232, 62, 140, 0.1);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+}
+
+/* Amélioration visuelle des formulaires cachés */
+form.d-inline {
+    display: inline-block !important;
+}
+
+/* Style pour les pre dans les résultats */
+.alert pre {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Amélioration des cards d'endpoints */
+.card-header {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.card-body ul {
+    padding-left: 1.25rem;
+    margin-bottom: 0;
+}
+
+    .card-body ul li {
+        margin-bottom: 0.25rem;
+    }
+
+/* Style pour les icônes */
+.fas {
+    margin-right: 0.5rem;
+}

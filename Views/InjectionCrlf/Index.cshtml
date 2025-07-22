@@ -1,0 +1,394 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<HeaderInjectionResult>
+
+@{
+    ViewData["Title"] = "CRLF Injection";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER :</strong> Cette application simule des vulnérabilités d'injection CRLF.
+        L'injection CRLF peut permettre des redirections malveillantes, XSS, vol de cookies et plus. Ne jamais utiliser ce code en production !
+    </div>
+
+    <h2>CRLF Injection - Test de Payload</h2>
+    <p class="text-muted">Tests d'injection CRLF (Carriage Return Line Feed) pour manipuler les en-têtes HTTP (A03:2021 - Injection)</p>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="InjectionCrlf" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="attackType">Type d'attaque</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key;
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Exemple de payload -->
+                <div id="payloadExample" class="alert alert-secondary mt-2" style="display:none;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="w-100">
+                            <strong>Exemple de payload :</strong><br />
+                            <pre class="mb-0 mt-2" style="font-size: 0.85em;"><code id="payloadExampleContent"></code></pre>
+                        </div>
+                    </div>
+                    <button type="button" id="useExampleBtn" class="btn btn-sm btn-outline-primary mt-2">
+                        Utiliser cet exemple
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="payload">Payload à injecter</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="Entrez votre payload avec CRLF (\r\n)...">
+                    <small class="form-text text-muted">
+                        Utilisez \r\n ou %0d%0a pour injecter des retours à la ligne
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-danger mt-3">
+                    <i class="fas fa-bug"></i> Injecter les en-têtes
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+        var alertClass = attackInfo.RiskLevel.ToLower() switch
+        {
+            "high" => "alert-danger",
+            "medium" => "alert-warning",
+            _ => "alert-info"
+        };
+
+        <div class="@alertClass mt-4">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    @if (attackInfo.RiskLevel == "High")
+                    {
+                        <i class="fas fa-exclamation-circle text-danger fa-2x"></i>
+                    }
+                    else if (attackInfo.RiskLevel == "Medium")
+                    {
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                    }
+                    else
+                    {
+                        <i class="fas fa-info-circle text-info fa-2x"></i>
+                    }
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - CRLF Injection Attack</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-@(attackInfo.RiskLevel.ToLower() == "high" ? "danger" : attackInfo.RiskLevel.ToLower() == "medium" ? "warning" : "info")">
+                            Risque : @attackInfo.RiskLevel
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Gestion des erreurs -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-times-circle"></i> Erreur d'injection</h5>
+            <p><strong>Message :</strong> @Model.ErrorMessage</p>
+
+            @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+            {
+                var attackInfo = Model.AttackInfos[Model.AttackType];
+                <div class="alert alert-warning mt-3">
+                    <strong><i class="fas fa-lightbulb"></i> Pourquoi cette erreur ?</strong>
+                    <p class="mb-0">@Html.Raw(attackInfo.ErrorExplanation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Résultats -->
+    @if (Model.Results?.Any() == true)
+    {
+        var result = Model.Results.First();
+
+        <div class="mt-4">
+            <h5><i class="fas fa-network-wired"></i> Résultats de l'injection CRLF</h5>
+
+            <!-- Payload original -->
+            <div class="card mt-3">
+                <div class="card-header bg-secondary text-white">
+                    <strong>Payload original :</strong>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0"><code>@result.OriginalPayload</code></pre>
+                </div>
+            </div>
+
+            <!-- Détection CRLF -->
+            @if (result.CrlfDetected)
+            {
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-check-circle"></i> <strong>Injection CRLF détectée !</strong>
+                    Les caractères de retour à la ligne ont été trouvés dans le payload.
+                </div>
+            }
+
+            <!-- En-têtes injectés -->
+            @if (result.InjectedHeaders?.Any() == true)
+            {
+                <div class="card mt-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <strong><i class="fas fa-syringe"></i> En-têtes HTTP injectés :</strong>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>En-tête</th>
+                                    <th>Valeur</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var header in result.InjectedHeaders)
+                                {
+                                    <tr>
+                                        <td><code>@header.Key</code></td>
+                                        <td>
+                                            @if (header.Key == "Location")
+                                            {
+                                                <span class="text-danger">
+                                                    <i class="fas fa-external-link-alt"></i> @header.Value
+                                                </span>
+                                            }
+                                            else if (header.Key == "Set-Cookie")
+                                            {
+                                                <span class="text-warning">
+                                                    <i class="fas fa-cookie-bite"></i> @header.Value
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span>@header.Value</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+
+            <!-- Contenu injecté dans le corps -->
+            @if (result.ResponseBodyInjected && !string.IsNullOrEmpty(result.InjectedContent))
+            {
+                <div class="card mt-3 border-warning">
+                    <div class="card-header bg-warning">
+                        <strong><i class="fas fa-code"></i> Contenu injecté dans le corps de la réponse :</strong>
+                    </div>
+                    <div class="card-body">
+                        <pre class="mb-0 p-2 bg-light"><code>@result.InjectedContent</code></pre>
+                    </div>
+                </div>
+            }
+
+            <!-- Modifications de la réponse -->
+            @if (result.ResponseModifications?.Any() == true)
+            {
+                <div class="card mt-3">
+                    <div class="card-header bg-info text-white">
+                        <strong><i class="fas fa-edit"></i> Modifications détectées :</strong>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            @foreach (var modification in result.ResponseModifications)
+                            {
+                                <li>@modification</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+
+            <!-- Impact de sécurité -->
+            @if (result.SecurityImpact?.Any() == true)
+            {
+                <div class="alert alert-danger mt-3">
+                    <h6><i class="fas fa-shield-alt"></i> Impact de sécurité :</h6>
+                    <ul class="mb-0">
+                        @foreach (var impact in result.SecurityImpact)
+                        {
+                            <li>@impact</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <!-- Score de risque -->
+            <div class="alert alert-secondary mt-3">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <strong>Score de risque</strong><br>
+                        <div class="progress mt-2" style="height: 25px;">
+                            @{
+                                var barClass = result.RiskScore > 70 ? "bg-danger" : result.RiskScore > 40 ? "bg-warning" : "bg-success";
+                            }
+                            <div class="progress-bar @barClass" role="progressbar" style="width: @result.RiskScore%">
+                                @result.RiskScore%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>En-têtes injectés</strong><br>
+                        <span class="h5">@(result.InjectedHeaders?.Count ?? 0)</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>CRLF détecté</strong><br>
+                        <span class="h5">
+                            @if (result.CrlfDetected)
+                            {
+                                <span class="text-danger">
+                                    <i class="fas fa-check"></i> Oui
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-success">
+                                    <i class="fas fa-times"></i> Non
+                                </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Exemples de payloads -->
+    <div class="mt-4">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-code"></i> Exemples de payloads CRLF Injection</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Redirection malveillante :</h6>
+                        <pre class="small"><code>test\r\nLocation: https://evil.com</code></pre>
+
+                        <h6>Injection de cookie :</h6>
+                        <pre class="small"><code>test\r\nSet-Cookie: admin=true</code></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>XSS via header injection :</h6>
+                        <pre class="small"><code>test\r\n\r\n&lt;script&gt;alert('XSS')&lt;/script&gt;</code></pre>
+
+                        <h6>Désactivation de sécurité :</h6>
+                        <pre class="small"><code>test\r\nX-Frame-Options: ALLOWALL</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conseils de sécurité -->
+    <div class="mt-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6><i class="fas fa-shield-alt"></i> Conseils de prévention CRLF Injection</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li><strong>Validation stricte :</strong> Rejeter toute entrée contenant \r\n ou leurs équivalents encodés</li>
+                    <li><strong>Encoding :</strong> Encoder les caractères spéciaux avant de les inclure dans les en-têtes</li>
+                    <li><strong>Utiliser des APIs sûres :</strong> Utiliser les méthodes du framework qui valident automatiquement</li>
+                    <li><strong>Liste blanche :</strong> N'accepter que des caractères alphanumériques dans les valeurs d'en-têtes</li>
+                    <li><strong>WAF :</strong> Implémenter un Web Application Firewall pour détecter les injections CRLF</li>
+                    <li><strong>Headers de sécurité :</strong> Toujours définir X-Content-Type-Options: nosniff</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique des tests -->
+    <div class="mt-4">
+        <h6><i class="fas fa-history"></i> Historique des tests</h6>
+        <div id="testHistory" class="alert alert-light" style="max-height: 200px; overflow-y: auto;">
+            <p class="text-muted">Aucun test effectué dans cette session.</p>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+            padding: 0.5rem;
+        }
+
+            pre.bg-dark code {
+                color: #fff !important;
+            }
+
+        .card pre {
+            margin-bottom: 0;
+        }
+
+        input.form-control {
+            font-family: 'Courier New', monospace;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .progress {
+            background-color: #e9ecef;
+        }
+    </style>
+}
+
+@section Scripts {
+    <!-- Données JSON sécurisées -->
+    <script type="application/json" id="attackInfosData">
+        @Json.Serialize(Model.AttackInfos)
+    </script>
+
+    <!-- Données pour le JavaScript -->
+    <script>
+        window.crlfInjectionData = {
+            hasResults: @Json.Serialize(Model.Results?.Any() == true),
+            hasError: @Json.Serialize(!string.IsNullOrEmpty(Model.ErrorMessage)),
+            attackType: @Json.Serialize(Model.AttackType ?? ""),
+            payload: @Json.Serialize(Model.Payload ?? ""),
+            results: @Json.Serialize(Model.Results ?? new List<HeaderInjectionResult>())
+        };
+    </script>
+
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/crlf-injection.js"></script>
+}

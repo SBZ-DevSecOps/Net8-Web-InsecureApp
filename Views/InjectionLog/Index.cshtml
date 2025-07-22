@@ -1,0 +1,121 @@
+﻿@using InsecureAppWebNet8.ViewModels
+
+
+@model VulnerabilityViewModel<string>
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Log Injection";
+    var hasResults = Model.Results != null && Model.Results.Any();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/log-injection.css" />
+}
+
+<div class="container py-3">
+    <h2 class="mb-3">🪵 Log Injection (OWASP)</h2>
+
+    <form method="post" class="mb-4" id="logInjectionForm">
+        <div class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="attackType" class="col-form-label">Type d'attaque :</label>
+            </div>
+            <div class="col-auto">
+                <select name="attackType" id="attackType" class="form-select" onchange="onAttackTypeChange()">
+                    <option value="">-- Sélectionnez un type --</option>
+                    @foreach (var kvp in Model.AttackInfos)
+                    {
+                        if (kvp.Key == Model.AttackType)
+                        {
+                            <option value="@kvp.Key" selected>@kvp.Key</option>
+                        }
+                        else
+                        {
+                            <option value="@kvp.Key">@kvp.Key</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-danger">Injecter</button>
+            </div>
+        </div>
+        <div class="mt-3">
+            <label for="payload" class="form-label">Payload à injecter dans les logs :</label>
+            <textarea name="payload" id="payload" rows="4" class="form-control">@Model.Payload</textarea>
+            <div id="payloadExampleContent" class="form-text text-muted mt-1"></div>
+        </div>
+        <div class="mt-2" id="attackInfoContent"></div>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger mt-4">
+            <i class="fa fa-exclamation-circle"></i> @Model.ErrorMessage
+        </div>
+    }
+    else if (hasResults)
+    {
+        <div class="card mt-4 border-danger">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                <span><i class="fa fa-file-alt"></i> Derniers logs enregistrés</span>
+                <div>
+                    <form method="post" asp-action="ClearLogs" style="display:inline;">
+                        <button type="button" onclick="clearLogFile()" class="btn btn-sm btn-outline-light">
+                            <i class="fa fa-trash-alt"></i> Purger
+                        </button>
+                    </form>
+                    <button type="button" onclick="exportLogResults()" class="btn btn-sm btn-outline-light"><i class="fa fa-download"></i> Exporter</button>
+                </div>
+            </div>
+            <div class="card-body log-output">
+                <pre id="logs-pre">@Html.Raw(string.Join("\n", Model.Results))</pre>
+            </div>
+        </div>
+
+        @if (Model.ErrorExplanations != null && Model.ErrorExplanations.Any())
+        {
+            <div class="alert alert-warning mt-4">
+                <h6><i class="fa fa-bug"></i> Indicateurs de suspicion :</h6>
+                <ul class="log-detections">
+                    @foreach (var entry in Model.ErrorExplanations)
+                    {
+                        <li><strong>@entry.Key</strong> : @entry.Value</li>
+                    }
+                </ul>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/log-injection.js"></script>
+    <script>
+        window.logAttackInfos = @Html.Raw(JsonSerializer.Serialize(Model.AttackInfos));
+        function onAttackTypeChange() {
+            var select = document.getElementById('attackType');
+            var selected = select.value;
+            var payloadInput = document.getElementById('payload');
+            var exampleContent = document.getElementById('payloadExampleContent');
+            var attackInfoContent = document.getElementById('attackInfoContent');
+            if (window.logAttackInfos && window.logAttackInfos[selected]) {
+                payloadInput.value = window.logAttackInfos[selected].PayloadExample;
+                exampleContent.textContent = "Exemple : " + window.logAttackInfos[selected].PayloadExample;
+                attackInfoContent.innerHTML =
+                    `<div class="card mt-2 p-2">
+                        <div><b>Description :</b> ${window.logAttackInfos[selected].Description}</div>
+                        <div><b>Niveau de risque :</b> ${window.logAttackInfos[selected].RiskLevel}</div>
+                        <div><b>Impact :</b> ${window.logAttackInfos[selected].ErrorExplanation}</div>
+                        <div><a href="${window.logAttackInfos[selected].LearnMoreUrl}" target="_blank">[En savoir plus]</a></div>
+                    </div>`;
+            } else {
+                payloadInput.value = "";
+                exampleContent.textContent = "";
+                attackInfoContent.innerHTML = "";
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            onAttackTypeChange();
+        });
+    </script>
+}
