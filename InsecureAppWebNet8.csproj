@@ -47,7 +47,7 @@
 	  <!-- jQuery et Bootstrap via LibMan ou wwwroot --><!--
 	  --><!-- Alternativement, vous pouvez utiliser : -->
 	   <PackageReference Include="jQuery" Version="2.1.4" /> 
-	   <PackageReference Include="Bootstrap" Version="3.3.7" /> 
+	   <PackageReference Include="Bootstrap" Version="4.3.1" /> 
 
 	  <!-- Autres packages vulnérables optionnels -->
 	  <PackageReference Include="System.Net.Http" Version="4.3.0" />
