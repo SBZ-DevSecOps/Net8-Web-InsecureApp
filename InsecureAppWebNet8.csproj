@@ -42,7 +42,7 @@
 	  <PackageReference Include="log4net" Version="2.0.8" />
 
 	  <!-- System.Data.SqlClient 4.4.0 - Multiples vulnérabilités -->
-	  <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
+	  <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
 
 	  <!-- jQuery et Bootstrap via LibMan ou wwwroot --><!--
 	  --><!-- Alternativement, vous pouvez utiliser : -->
