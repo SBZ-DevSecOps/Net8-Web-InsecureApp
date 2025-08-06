@@ -39,7 +39,7 @@
 	  <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
 
 	  --><!-- log4net 2.0.8 - CVE-2018-1285 (XXE) -->
-	  <PackageReference Include="log4net" Version="2.0.8" />
+	  <PackageReference Include="log4net" Version="2.0.10" />
 
 	  <!-- System.Data.SqlClient 4.4.0 - Multiples vulnérabilités -->
 	  <PackageReference Include="System.Data.SqlClient" Version="4.4.0" />
